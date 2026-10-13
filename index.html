@@ -1,152 +1,194 @@
 <!doctype html>
-<html lang="es">
+<html lang="es" translate="no">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-  <meta name="theme-color" content="#0a0f2c">
-  <meta name="description" content="Grammar Runner: Word Switch — juego para aprender pronombres, posesivos y verbos irregulares en inglés. Funciona en laptop y iPad.">
-  <title>Grammar Runner: Word Switch</title>
-  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🏃</text></svg>">
+  <meta name="theme-color" content="#0d1017">
+  <meta name="google" content="notranslate">
+  <meta name="description" content="Grammar Runner: juego para aprender pronombres, posesivos y verbos irregulares en inglés. Funciona en laptop y iPad.">
+  <title>Grammar Runner · Word Switch</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%230d1017'/%3E%3Cpath d='M8 20h16M8 12h10' stroke='%234f8cff' stroke-width='3' stroke-linecap='round'/%3E%3C/svg%3E">
   <link rel="stylesheet" href="css/styles.css">
 </head>
 <body data-screen="menu">
 
 <div id="app">
 
-  <!-- ===== Arriba: marcador + pista ===== -->
+  <!-- ============ Pista + marcador ============ -->
   <header id="topbar">
     <div id="hud">
-      <div id="hud-level">Grammar Runner</div>
+      <div class="hud-left">
+        <span id="hud-level" class="hud-level">Grammar Runner</span>
+        <span id="hud-progress" class="hud-progress"></span>
+      </div>
       <div class="hud-right">
-        <span id="hud-streak"></span>
-        <span id="hud-lives">❤️❤️❤️</span>
-        <span class="score-chip"><span>⭐</span> <span id="hud-score">0</span></span>
-        <button id="btn-mute" class="icon-btn" type="button" title="Sonido (M)">🔊</button>
-        <button id="btn-pause" class="icon-btn" type="button" title="Pausa (P)">⏸️</button>
+        <span id="hud-streak" class="hud-streak"></span>
+        <span id="hud-lives" class="lives" aria-label="Vidas"></span>
+        <span class="score"><span class="score-label">Puntos</span><b id="hud-score">0</b></span>
+        <button id="btn-mute" class="icon-btn" type="button" title="Activar o silenciar el sonido (M)"></button>
+        <button id="btn-pause" class="icon-btn" type="button" title="Pausa (P)"></button>
       </div>
     </div>
 
-    <div id="prompt">
-      <div id="prompt-emoji">🏃</div>
-      <div id="prompt-body">
-        <div id="prompt-text">___ corro todos los días.</div>
-        <div id="prompt-meta">
-          <span id="prompt-tag">Elige el pronombre correcto</span>
-          <span id="prompt-hint">(Yo)</span>
+    <div id="prompt" class="prompt notranslate" translate="no">
+      <div id="prompt-icon" class="prompt-icon"></div>
+      <div class="prompt-body">
+        <p id="prompt-es" class="prompt-es"></p>
+        <p id="prompt-en" class="prompt-en"></p>
+        <div class="prompt-meta">
+          <span id="prompt-tag" class="tag"></span>
+          <span id="prompt-cue" class="cue"></span>
         </div>
       </div>
     </div>
   </header>
 
-  <!-- ===== Escenario del juego ===== -->
+  <!-- ============ Escenario ============ -->
   <div id="stage">
     <canvas id="game"></canvas>
 
-    <!-- Botones táctiles (iPad / tablet) -->
-    <div id="controls">
-      <button id="btn-up" type="button">⬆️<span>Subir</span></button>
-      <button id="btn-down" type="button">⬇️<span>Bajar</span></button>
+    <div id="controls" class="controls">
+      <button id="btn-up" class="pad" type="button" aria-label="Subir de carril"></button>
+      <button id="btn-down" class="pad" type="button" aria-label="Bajar de carril"></button>
     </div>
 
-    <!-- Aviso flotante de acierto -->
-    <div id="toast" class="toast"></div>
-
-    <!-- Recordatorio cuando fallas -->
     <div id="flash" class="flash"></div>
+    <div id="toast" class="toast"></div>
   </div>
 
-  <!-- ===== Capas de pantalla ===== -->
-
-  <!-- Menú principal -->
+  <!-- ============ Menú ============ -->
   <section id="screen-menu" class="overlay on">
-    <div class="card wide">
-      <div class="logo">🏃‍♂️🚪</div>
-      <h1>Grammar Runner</h1>
-      <p class="sub">Word Switch · Aprende inglés corriendo</p>
-      <p class="desc">
-        Lee la pista en español, muévete entre los 3 carriles y cruza la puerta
-        con la palabra correcta en inglés.
+    <div class="card">
+      <p class="eyebrow">Juego educativo de inglés</p>
+      <h1>Grammar Runner<span class="dot">·</span>Word Switch</h1>
+      <p class="lead">
+        Corres por 3 carriles y eliges la puerta con la palabra correcta en inglés.
+        Cada nivel empieza con su vocabulario, así que no necesitas saber inglés para empezar.
       </p>
-      <div class="stats">
-        <div><span class="k">Mejor puntaje</span><b id="best-menu">0</b></div>
-      </div>
-      <button id="btn-play" class="btn big primary" type="button">▶️ Jugar</button>
-      <button id="btn-tutorial" class="btn big" type="button">📖 Tutorial (español)</button>
-      <p class="hint-keys">
-        Laptop: <b>↑</b> <b>↓</b> o <b>W</b> <b>S</b> · iPad: desliza el dedo o toca los botones.
+
+      <dl class="facts">
+        <div><dt>Niveles</dt><dd>3</dd></div>
+        <div><dt>Palabras</dt><dd>24</dd></div>
+        <div><dt>Mejor puntaje</dt><dd id="best-menu">0</dd></div>
+      </dl>
+
+      <button id="btn-play" class="btn primary" type="button">
+        <span class="btn-icon" data-icon="play"></span> Jugar
+      </button>
+      <button id="btn-tutorial" class="btn" type="button">
+        <span class="btn-icon" data-icon="graduation-cap"></span> Ver el tutorial
+      </button>
+
+      <p class="keys">
+        Laptop: <kbd data-icon="chevron-up" data-icon-size="12"></kbd><kbd data-icon="chevron-down" data-icon-size="12"></kbd>
+        o <kbd>W</kbd><kbd>S</kbd> · iPad: desliza el dedo o usa los botones de la esquina
       </p>
     </div>
   </section>
 
-  <!-- Tutorial -->
+  <!-- ============ Vocabulario ============ -->
+  <section id="screen-vocab" class="overlay">
+    <div class="card vocab-card">
+      <p class="eyebrow" id="vocab-eyebrow">Antes de jugar</p>
+      <h2 id="vocab-title">Vocabulario</h2>
+      <p class="lead" id="vocab-lead"></p>
+      <ul id="vocab-list" class="vocab-list notranslate" translate="no"></ul>
+      <p class="note" id="vocab-note">
+        Toca el altavoz para escuchar la pronunciación en inglés.
+      </p>
+      <button id="btn-vocab-play" class="btn primary" type="button">
+        <span class="btn-icon" data-icon="play"></span> <span id="vocab-play-label">Empezar el nivel</span>
+      </button>
+      <button id="btn-vocab-back" class="btn ghost" type="button">Volver al menú</button>
+    </div>
+  </section>
+
+  <!-- ============ Tutorial ============ -->
   <section id="screen-tutorial" class="overlay">
     <div class="card">
-      <div class="tut-emoji" id="tut-emoji">👋</div>
-      <h2 id="tut-title">Bienvenido</h2>
-      <p id="tut-text"></p>
+      <div class="tut-icon" id="tut-icon"></div>
+      <h2 id="tut-title">Tutorial</h2>
+      <p id="tut-text" class="lead"></p>
       <div class="dots" id="tut-dots"></div>
       <div class="row">
-        <button id="btn-tut-prev" class="btn" type="button">⬅️ Atrás</button>
-        <button id="btn-tut-next" class="btn primary" type="button">Siguiente ➜</button>
+        <button id="btn-tut-prev" class="btn" type="button">Atrás</button>
+        <button id="btn-tut-next" class="btn primary" type="button">Siguiente</button>
       </div>
-      <button id="btn-tut-skip" class="btn ghost" type="button">Saltar tutorial y jugar</button>
+      <button id="btn-tut-skip" class="btn ghost" type="button">Saltar el tutorial</button>
     </div>
   </section>
 
-  <!-- Fin de la práctica -->
+  <!-- ============ Fin de la práctica ============ -->
   <section id="screen-practice-done" class="overlay">
     <div class="card">
-      <div class="tut-emoji">🎉</div>
-      <h2>¡Listo! Ya sabes jugar</h2>
-      <p>
-        Muy bien. Ahora empieza el juego de verdad: 3 vidas, 3 niveles y puntos
-        por cada acierto. ¡Tú puedes!
+      <div class="tut-icon ok" id="practice-icon"></div>
+      <h2>Ya sabes jugar</h2>
+      <p class="lead">
+        Muy bien. Ahora empieza el juego de verdad: 3 vidas, 3 niveles y puntos por cada acierto.
       </p>
-      <button id="btn-practice-end" class="btn big primary" type="button">🚀 Empezar a jugar</button>
+      <button id="btn-practice-end" class="btn primary" type="button">
+        <span class="btn-icon" data-icon="play"></span> Empezar a jugar
+      </button>
     </div>
   </section>
 
-  <!-- Nivel completado -->
+  <!-- ============ Nivel completado ============ -->
   <section id="screen-done" class="overlay">
     <div class="card">
-      <div class="tut-emoji">🏆</div>
-      <h2 id="done-title">¡Nivel completado!</h2>
-      <p id="done-sub"></p>
-      <div class="score-big" id="done-score">Puntos: 0</div>
-      <button id="btn-continue" class="btn big primary" type="button">Continuar ➜</button>
+      <div class="tut-icon ok" id="done-icon"></div>
+      <h2 id="done-title">Nivel completado</h2>
+      <p class="lead" id="done-sub"></p>
+      <dl class="facts">
+        <div><dt>Puntos</dt><dd id="done-score">0</dd></div>
+        <div><dt>Aciertos</dt><dd id="done-right">0</dd></div>
+        <div><dt>Errores</dt><dd id="done-wrong">0</dd></div>
+      </dl>
+      <button id="btn-continue" class="btn primary" type="button">Continuar</button>
     </div>
   </section>
 
-  <!-- Fin de la partida -->
+  <!-- ============ Fin de la partida ============ -->
   <section id="screen-over" class="overlay">
     <div class="card">
-      <div class="tut-emoji">💥</div>
-      <h2>¡Se acabaron las vidas!</h2>
-      <p id="over-detail"></p>
-      <div class="score-big">Puntaje: <span id="over-score">0</span></div>
-      <p class="sub">Mejor puntaje: <b id="over-best">0</b></p>
-      <button id="btn-retry" class="btn big primary" type="button">🔁 Jugar otra vez</button>
-      <button id="btn-menu-2" class="btn" type="button">🏠 Menú principal</button>
+      <div class="tut-icon bad" id="over-icon"></div>
+      <h2>Se acabaron las vidas</h2>
+      <p class="lead" id="over-detail"></p>
+      <dl class="facts">
+        <div><dt>Puntaje</dt><dd id="over-score">0</dd></div>
+        <div><dt>Mejor puntaje</dt><dd id="over-best">0</dd></div>
+      </dl>
+      <button id="btn-retry" class="btn primary" type="button">
+        <span class="btn-icon" data-icon="rotate-ccw"></span> Jugar otra vez
+      </button>
+      <button id="btn-menu-2" class="btn ghost" type="button">Volver al menú</button>
     </div>
   </section>
 
-  <!-- Pausa -->
+  <!-- ============ Pausa ============ -->
   <section id="screen-pause" class="overlay">
     <div class="card">
-      <div class="tut-emoji">⏸️</div>
+      <div class="tut-icon" id="pause-icon"></div>
       <h2>Pausa</h2>
-      <p>Tómate tu tiempo. El juego sigue cuando tú digas.</p>
-      <button id="btn-resume" class="btn big primary" type="button">▶️ Continuar</button>
-      <button id="btn-restart" class="btn" type="button">🔁 Reiniciar</button>
-      <button id="btn-menu" class="btn ghost" type="button">🏠 Menú principal</button>
+      <p class="lead">El juego sigue cuando tú digas.</p>
+      <button id="btn-resume" class="btn primary" type="button">
+        <span class="btn-icon" data-icon="play"></span> Continuar
+      </button>
+      <button id="btn-vocab-again" class="btn" type="button">
+        <span class="btn-icon" data-icon="book-open"></span> Repasar el vocabulario
+      </button>
+      <button id="btn-restart" class="btn" type="button">
+        <span class="btn-icon" data-icon="rotate-ccw"></span> Reiniciar la partida
+      </button>
+      <button id="btn-menu" class="btn ghost" type="button">Volver al menú</button>
     </div>
   </section>
 
 </div>
 
+<script src="js/icons.js"></script>
 <script src="js/questions.js"></script>
 <script src="js/game.js"></script>
 </body>

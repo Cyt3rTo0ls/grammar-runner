@@ -1,5 +1,5 @@
 /* ============================================================
-   Grammar Runner: Word Switch
+   Grammar Runner · Word Switch
    Motor del juego (canvas 2D, 3 carriles)
    Funciona en laptop (teclado) y en iPad / tablets (táctil)
    ============================================================ */
@@ -11,8 +11,8 @@
   var CFG = {
     lanes: 3,
     lives: 3,
-    screenMsPerWidth: 3300, // tiempo en cruzar la pantalla (ms)
-    gateWidthRatio: 0.155,
+    screenMsPerWidth: 3400, // tiempo en cruzar la pantalla (ms)
+    gateWidthRatio: 0.175,
     gapMs: 1000,            // pausa entre puertas
     firstGapMs: 1400        // pausa antes de la primera puerta
   };
@@ -29,6 +29,9 @@
     return a;
   }
   function cap(s) { return s.charAt(0).toUpperCase() + s.slice(1); }
+  function esc(s) {
+    return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  }
   function hexA(hex, a) {
     var h = hex.replace('#', '');
     if (h.length === 3) h = h[0] + h[0] + h[1] + h[1] + h[2] + h[2];
@@ -46,7 +49,7 @@
     c.closePath();
   }
 
-  var FONT = '"Trebuchet MS", "Segoe UI", system-ui, -apple-system, sans-serif';
+  var FONT = 'system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif';
 
   /* Almacenamiento seguro: en Safari con modo privado localStorage puede fallar. */
   var store = {
@@ -89,10 +92,11 @@
     lastT: 0,
     shake: 0,
     mute: store.get('gr_mute', '0') === '1',
+    afterVocab: null,   // qué hacer al cerrar el vocabulario
     W: 0, H: 0, laneH: 0, gateW: 0, playerX: 0
   };
 
-  /* ---------------- Audio (WebAudio, sin archivos) ---------------- */
+  /* ---------------- Audio ---------------- */
   var AC = null;
   function actx() {
     if (!AC) {
@@ -119,17 +123,32 @@
   }
   function sfx(name) {
     if (G.mute) return;
-    if (name === 'move') beep(430, 0.07, 'triangle', 0.07);
-    else if (name === 'good') { beep(660, 0.10, 'sine', 0.13); beep(880, 0.12, 'sine', 0.12, 0.08); beep(1180, 0.16, 'sine', 0.11, 0.17); }
-    else if (name === 'bad') { beep(180, 0.16, 'sawtooth', 0.10); beep(120, 0.22, 'sawtooth', 0.09, 0.12); }
-    else if (name === 'level') { beep(523, 0.13, 'square', 0.09); beep(659, 0.13, 'square', 0.09, 0.13); beep(784, 0.13, 'square', 0.09, 0.26); beep(1046, 0.30, 'square', 0.10, 0.39); }
-    else if (name === 'over') { beep(400, 0.18, 'sawtooth', 0.10); beep(300, 0.20, 'sawtooth', 0.09, 0.16); beep(200, 0.35, 'sawtooth', 0.09, 0.34); }
+    if (name === 'move') beep(430, 0.07, 'triangle', 0.06);
+    else if (name === 'good') { beep(660, 0.10, 'sine', 0.12); beep(880, 0.12, 'sine', 0.11, 0.08); beep(1180, 0.16, 'sine', 0.10, 0.17); }
+    else if (name === 'bad') { beep(180, 0.16, 'sawtooth', 0.09); beep(120, 0.22, 'sawtooth', 0.08, 0.12); }
+    else if (name === 'level') { beep(523, 0.13, 'square', 0.08); beep(659, 0.13, 'square', 0.08, 0.13); beep(784, 0.13, 'square', 0.08, 0.26); beep(1046, 0.30, 'square', 0.09, 0.39); }
+    else if (name === 'over') { beep(400, 0.18, 'sawtooth', 0.09); beep(300, 0.20, 'sawtooth', 0.08, 0.16); beep(200, 0.35, 'sawtooth', 0.08, 0.34); }
   }
+
+  /* Pronunciación en inglés (voz del navegador, sin internet) */
+  function say(text) {
+    if (G.mute) return;
+    try {
+      var S = window.speechSynthesis;
+      if (!S) return;
+      S.cancel();
+      var u = new SpeechSynthesisUtterance(text);
+      u.lang = 'en-US';
+      u.rate = 0.85;
+      S.speak(u);
+    } catch (e) { /* sin voz disponible */ }
+  }
+  var canSpeak = (typeof window !== 'undefined' && 'speechSynthesis' in window);
 
   /* ---------------- DOM ---------------- */
   var cv, ctx, stage;
-  var promptEl, elEmoji, elText, elHint, elTag;
-  var elLevel, elScore, elLives, elStreak;
+  var promptEl, elIcon, elEs, elEn, elTag, elCue;
+  var elLevel, elProgress, elScore, elLives, elStreak;
   var elFlash, elToast;
   var flashTimer = null, toastTimer = null;
 
@@ -140,14 +159,14 @@
     var dpr = Math.min(window.devicePixelRatio || 1, 2.5);
     var r = stage.getBoundingClientRect();
     G.W = Math.max(300, Math.round(r.width));
-    G.H = Math.max(280, Math.round(r.height));
+    G.H = Math.max(260, Math.round(r.height));
     cv.width = Math.round(G.W * dpr);
     cv.height = Math.round(G.H * dpr);
     cv.style.width = G.W + 'px';
     cv.style.height = G.H + 'px';
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
     G.laneH = G.H / CFG.lanes;
-    G.gateW = clamp(G.W * CFG.gateWidthRatio, 80, 190);
+    G.gateW = clamp(G.W * CFG.gateWidthRatio, 96, 230);
     G.playerX = clamp(G.W * 0.19, 62, 210);
     G.laneY = laneCenter(G.lane);
     G.targetY = G.laneY;
@@ -176,6 +195,7 @@
     else if (k === 'ArrowDown' || k === 's' || k === 'S') { move(1); e.preventDefault(); }
     else if (k === ' ' || k === 'Enter') {
       if (G.screen === 'menu') { e.preventDefault(); startGame(); }
+      else if (G.screen === 'vocab') { e.preventDefault(); closeVocab(); }
       else if (G.screen === 'paused') { e.preventDefault(); togglePause(); }
       else if (G.screen === 'gameOver') { e.preventDefault(); restart(); }
     }
@@ -183,7 +203,6 @@
     else if (k === 'm' || k === 'M') { toggleMute(); }
   }, { passive: false });
 
-  /* Deslizar el dedo (iPad / tablets) */
   var touchStart = null;
   function onTouchStart(e) {
     if (e.touches.length) touchStart = { x: e.touches[0].clientX, y: e.touches[0].clientY };
@@ -203,11 +222,13 @@
     return shuffle(level.items).map(function (it) {
       var opts = shuffle(it.options);
       return {
-        emoji: it.emoji,
-        sentence: it.sentence,
-        hint: it.hint,
+        icon: it.icon,
+        es: it.es,
+        en: it.en,
+        cue: it.cue,
         pattern: it.pattern,
         explain: it.explain,
+        meaning: it.meaning,
         words: opts,
         correct: opts.indexOf(it.options[it.correct])
       };
@@ -240,6 +261,7 @@
     showPrompt(G.current);
     G.pendingSpawn = true;
     G.spawnTimer = CFG.gapMs + (extraDelay || 0);
+    syncHUD();
   }
 
   function spawnGate() {
@@ -266,10 +288,11 @@
       G.streak++;
       G.rightCount++;
       g.state = 'broken';
-      burst(G.playerX, laneCenter(G.lane), '#4ade80', 22);
-      G.popups.push({ x: G.playerX + 26, y: laneCenter(G.lane) - 24, text: '+' + gain, life: 900, t: 0, color: '#86efac' });
+      burst(G.playerX, laneCenter(G.lane), '#2fa96b', 22);
+      G.popups.push({ x: G.playerX + 26, y: laneCenter(G.lane) - 24, text: '+' + gain, life: 900, t: 0, color: '#7ee2b0' });
       sfx('good');
-      toast('✅ ¡Muy bien!  «' + cap(g.words[g.correctLane]) + '»  ·  ' + g.q.explain, 'good');
+      say(g.words[g.correctLane]);
+      toast('Correcto · ' + esc(g.q.meaning) + '\n' + esc(g.q.explain), 'good');
       syncHUD();
       if (G.practice) { endPractice(); return; }
       nextQuestion(0);
@@ -279,9 +302,11 @@
       g.state = 'wrong';
       g.cellState[g.correctLane] = 1;
       G.shake = 320;
-      burst(G.playerX, laneCenter(G.lane), '#f87171', 16);
+      burst(G.playerX, laneCenter(G.lane), '#e5484d', 16);
       sfx('bad');
-      flash('❌ «' + cap(pickedWord) + '» no es aquí   ·   ✅ La respuesta era «' + cap(g.words[g.correctLane]) + '»\n' + g.q.explain);
+      flash('Fallaste · elegiste «' + cap(pickedWord) + '»\n' +
+            'La respuesta era «' + cap(g.words[g.correctLane]) + '» (' + esc(g.q.meaning) + ')\n' +
+            esc(g.q.explain));
       syncHUD();
       if (G.practice) {
         G.current = g.q;
@@ -301,12 +326,15 @@
     var isLast = (G.levelIndex === LEVELS.length - 1);
     var nextIdx = isLast ? 0 : (G.levelIndex + 1);
     if (isLast) G.round++;
-    document.getElementById('done-title').textContent = '¡Nivel completado! 🎉';
+    document.getElementById('done-title').textContent = 'Nivel completado: ' + LEVELS[G.levelIndex].title;
     document.getElementById('done-sub').textContent =
-      'Terminaste «' + LEVELS[G.levelIndex].title + '».  Aciertos: ' + G.rightCount + '  ·  Errores: ' + G.wrongCount;
-    document.getElementById('done-score').textContent = 'Puntos: ' + G.score;
+      'Muy bien. Sigue con el siguiente nivel para aprender palabras nuevas.';
+    document.getElementById('done-score').textContent = G.score;
+    document.getElementById('done-right').textContent = G.rightCount;
+    document.getElementById('done-wrong').textContent = G.wrongCount;
     var btn = document.getElementById('btn-continue');
-    btn.textContent = 'Ir al Nivel ' + LEVELS[nextIdx].id + ' ➜';
+    btn.innerHTML = '<span class="btn-icon">' + icon('chevron-right', 18) + '</span> ' +
+      (isLast ? 'Repetir el nivel 1' : 'Ir al nivel ' + LEVELS[nextIdx].id);
     btn.dataset.next = String(nextIdx);
     setScreen('levelDone');
     showOverlay('screen-done');
@@ -317,18 +345,19 @@
     if (G.score > G.best) { G.best = G.score; store.set('gr_best', G.best); }
     document.getElementById('over-score').textContent = G.score;
     document.getElementById('over-best').textContent = G.best;
-    document.getElementById('over-detail').textContent = 'Aciertos: ' + G.rightCount + '  ·  Errores: ' + G.wrongCount;
+    document.getElementById('over-detail').textContent =
+      'Acertaste ' + G.rightCount + ' palabras y fallaste ' + G.wrongCount + '.';
     setScreen('gameOver');
     showOverlay('screen-over');
   }
 
   /* ---------------- Práctica del tutorial ---------------- */
   function startPractice() {
-    var item = LEVELS[0].items[2]; // ejemplo claro: "He"
+    var item = LEVELS[0].items[2]; // ejemplo claro
     var opts = shuffle(item.options);
     G.queue = [{
-      emoji: item.emoji, sentence: item.sentence, hint: item.hint,
-      pattern: item.pattern, explain: item.explain,
+      icon: item.icon, es: item.es, en: item.en, cue: item.cue,
+      pattern: item.pattern, explain: item.explain, meaning: item.meaning,
       words: opts, correct: opts.indexOf(item.options[item.correct])
     }];
     G.qIndex = -1;
@@ -357,6 +386,56 @@
     });
   }
 
+  /* ---------------- Vocabulario ---------------- */
+  function openVocab(levelIndex, thenPlay) {
+    var lvl = LEVELS[levelIndex];
+    G.afterVocab = thenPlay ? levelIndex : null;
+    document.getElementById('vocab-eyebrow').textContent =
+      'Nivel ' + lvl.id + ' de ' + LEVELS.length + ' · antes de jugar';
+    document.getElementById('vocab-title').textContent = lvl.title;
+    document.getElementById('vocab-lead').textContent =
+      lvl.subtitle + '. Lee estas palabras con calma: son las respuestas que van a aparecer en las puertas.';
+    document.getElementById('vocab-play-label').textContent =
+      thenPlay ? 'Empezar el nivel' : 'Continuar';
+
+    var list = document.getElementById('vocab-list');
+    var html = '';
+    for (var i = 0; i < lvl.vocab.length; i++) {
+      var v = lvl.vocab[i];
+      html += '<li class="vocab-row">' +
+        '<span class="vocab-en notranslate" translate="no">' + esc(v.en) + '</span>' +
+        '<span class="vocab-es"><b>' + esc(v.es) + '</b>' +
+        (v.tip ? '<span class="tip">' + esc(v.tip) + '</span>' : '') + '</span>' +
+        (canSpeak
+          ? '<button class="speak" type="button" data-say="' + esc(v.say || v.en) + '" ' +
+            'aria-label="Escuchar ' + esc(v.en) + '">' + icon('volume-2', 17) + '</button>'
+          : '') +
+        '</li>';
+    }
+    list.innerHTML = html;
+
+    var note = document.getElementById('vocab-note');
+    note.textContent = canSpeak
+      ? 'Toca el altavoz para escuchar cómo se pronuncia en inglés.'
+      : 'Estas son las palabras que aparecerán en el nivel.';
+
+    document.getElementById('btn-vocab-back').style.display = thenPlay ? 'none' : 'flex';
+    setScreen('vocab');
+    showOverlay('screen-vocab');
+  }
+
+  function closeVocab() {
+    var idx = G.afterVocab;
+    G.afterVocab = null;
+    if (idx !== null && idx !== undefined) {
+      G.lives = CFG.lives;
+      startLevel(idx);
+    } else {
+      setScreen('paused');
+      showOverlay('screen-pause');
+    }
+  }
+
   /* ---------------- Overlays / HUD ---------------- */
   function showOverlay(id) {
     hideOverlays();
@@ -373,29 +452,34 @@
     if (promptEl) promptEl.classList.toggle('show', s === 'playing');
   }
   function showPrompt(q) {
-    elEmoji.textContent = q.emoji || '❓';
-    elText.innerHTML = q.sentence.replace('___', '<span class="blank">___</span>');
-    elHint.textContent = q.hint || '';
+    elIcon.innerHTML = icon(q.icon || 'sparkles', 26);
+    elEs.innerHTML = esc(q.es).replace('___', '<span class="blank">___</span>');
+    elEn.innerHTML = esc(q.en).replace('___', '<span class="blank">___</span>');
     elTag.textContent = q.pattern || (LEVELS[G.levelIndex] ? LEVELS[G.levelIndex].tag : '');
+    elCue.textContent = q.cue ? 'Pista: ' + q.cue : '';
   }
   function syncHUD() {
     elScore.textContent = G.score;
-    elStreak.textContent = G.streak > 1 ? ('🔥 x' + G.streak) : '';
-    var hearts = '';
-    for (var i = 0; i < CFG.lives; i++) hearts += (i < G.lives ? '❤️' : '🖤');
-    elLives.textContent = hearts;
+    elStreak.textContent = G.streak > 1 ? 'Racha ×' + G.streak : '';
+    if (G.queue.length) elProgress.textContent = 'Pregunta ' + Math.max(1, G.qIndex + 1) + ' de ' + G.queue.length;
+    else elProgress.textContent = '';
+    var h = '';
+    for (var i = 0; i < CFG.lives; i++) {
+      h += i < G.lives ? icon('heart', 16) : icon('heart', 16, 'off');
+    }
+    elLives.innerHTML = h;
   }
   function toast(text, kind) {
-    elToast.textContent = text;
+    elToast.innerHTML = text;
     elToast.className = 'toast show ' + (kind || '');
     if (toastTimer) clearTimeout(toastTimer);
-    toastTimer = setTimeout(function () { elToast.classList.remove('show'); }, 2800);
+    toastTimer = setTimeout(function () { elToast.classList.remove('show'); }, 3000);
   }
   function flash(text) {
-    elFlash.textContent = text;
+    elFlash.innerHTML = text;
     elFlash.classList.add('show');
     if (flashTimer) clearTimeout(flashTimer);
-    flashTimer = setTimeout(function () { elFlash.classList.remove('show'); }, 3600);
+    flashTimer = setTimeout(function () { elFlash.classList.remove('show'); }, 4200);
   }
   function later(ms, fn) { setTimeout(fn, ms); }
 
@@ -411,18 +495,17 @@
     G.practice = false; G.highlight = false;
     G.particles = []; G.popups = [];
   }
-  function restart() { resetRun(); startLevel(0); }
-  function startGame() { actx(); resetRun(); startLevel(0); }
+  function restart() { resetRun(); openVocab(0, true); }
+  function startGame() { actx(); resetRun(); openVocab(0, true); }
   function goMenu() { hideOverlays(); setScreen('menu'); showOverlay('screen-menu'); }
   function toggleMute() {
     G.mute = !G.mute;
     store.set('gr_mute', G.mute ? '1' : '0');
     updateMuteBtn();
-    if (!G.mute) sfx('move');
+    if (!G.mute) { sfx('move'); say('Hello'); }
   }
   function updateMuteBtn() {
-    var b = document.getElementById('btn-mute');
-    if (b) b.textContent = G.mute ? '🔇' : '🔊';
+    document.getElementById('btn-mute').innerHTML = icon(G.mute ? 'volume-x' : 'volume-2', 18);
   }
 
   /* ---------------- Partículas ---------------- */
@@ -488,29 +571,30 @@
     var W = G.W, H = G.H, i;
     var lvl = LEVELS[G.levelIndex] || LEVELS[0];
 
-    var grad = ctx.createLinearGradient(0, 0, 0, H);
-    grad.addColorStop(0, '#0a0f2c');
-    grad.addColorStop(0.55, '#140f33');
-    grad.addColorStop(1, '#1d0f2e');
-    ctx.fillStyle = grad;
+    ctx.fillStyle = '#0a0d13';
     ctx.fillRect(0, 0, W, H);
 
-    var rg = ctx.createRadialGradient(W * 0.15, H * 0.5, 10, W * 0.15, H * 0.5, Math.max(W, H) * 0.7);
-    rg.addColorStop(0, hexA(lvl.color, 0.16));
+    // resplandor suave del color del nivel, solo abajo a la izquierda
+    var rg = ctx.createRadialGradient(G.playerX, H * 0.5, 8, G.playerX, H * 0.5, Math.max(W, H) * 0.62);
+    rg.addColorStop(0, hexA(lvl.color, 0.10));
     rg.addColorStop(1, 'rgba(0,0,0,0)');
     ctx.fillStyle = rg;
     ctx.fillRect(0, 0, W, H);
 
+    // carriles
     for (i = 0; i < CFG.lanes; i++) {
-      ctx.fillStyle = (i % 2 === 0) ? 'rgba(255,255,255,0.030)' : 'rgba(255,255,255,0.012)';
-      ctx.fillRect(0, G.laneH * i, W, G.laneH);
+      if (i % 2 === 1) {
+        ctx.fillStyle = 'rgba(255,255,255,0.016)';
+        ctx.fillRect(0, G.laneH * i, W, G.laneH);
+      }
     }
 
+    // divisorias
     ctx.save();
-    ctx.strokeStyle = 'rgba(148,163,255,0.28)';
-    ctx.lineWidth = 2;
-    ctx.setLineDash([26, 22]);
-    ctx.lineDashOffset = -(G.dist % 48);
+    ctx.strokeStyle = 'rgba(120,140,180,0.20)';
+    ctx.lineWidth = 1;
+    ctx.setLineDash([18, 16]);
+    ctx.lineDashOffset = -(G.dist % 34);
     for (i = 1; i < CFG.lanes; i++) {
       ctx.beginPath();
       ctx.moveTo(0, G.laneH * i);
@@ -519,19 +603,21 @@
     }
     ctx.restore();
 
+    // marcas de velocidad
     ctx.save();
-    for (i = 0; i < 26; i++) {
-      var sx = W - ((G.dist * (0.35 + (i % 5) * 0.14) + i * 173) % (W + 120));
+    for (i = 0; i < 22; i++) {
+      var sx = W - ((G.dist * (0.32 + (i % 5) * 0.13) + i * 191) % (W + 120));
       var sy = Math.abs((Math.sin(i * 12.9898) * 43758.5453) % 1) * H;
-      ctx.fillStyle = 'rgba(180,200,255,' + (0.10 + (i % 4) * 0.05).toFixed(2) + ')';
-      ctx.fillRect(sx, sy, 2 + (i % 3) * 6, 2);
+      ctx.fillStyle = 'rgba(150,170,210,' + (0.07 + (i % 4) * 0.035).toFixed(3) + ')';
+      ctx.fillRect(sx, sy, 1 + (i % 3) * 5, 1);
     }
     ctx.restore();
 
+    // laboratorio de verbos: tubo de velocidad
     if (lvl.mode === 'collect') {
       ctx.save();
-      ctx.strokeStyle = hexA(lvl.color, 0.20);
-      ctx.lineWidth = 3;
+      ctx.strokeStyle = hexA(lvl.color, 0.14);
+      ctx.lineWidth = 2;
       for (i = 0; i < 5; i++) {
         var t = ((G.dist * 0.5 + i * 260) % (W + 300)) / (W + 300);
         var x = W - t * (W + 300);
@@ -545,8 +631,8 @@
 
   function fitText(text, maxW, base) {
     var size = base;
-    while (size > 10) {
-      ctx.font = '800 ' + size + 'px ' + FONT;
+    while (size > 12) {
+      ctx.font = '700 ' + size + 'px ' + FONT;
       if (ctx.measureText(text).width <= maxW) break;
       size -= 1;
     }
@@ -555,67 +641,55 @@
 
   function drawCellText(text, cx, cy, maxW, base) {
     var size = fitText(text, maxW, base);
-    ctx.font = '800 ' + size + 'px ' + FONT;
+    ctx.font = '700 ' + size + 'px ' + FONT;
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
     ctx.fillStyle = '#ffffff';
-    ctx.shadowColor = 'rgba(0,0,0,0.45)';
-    ctx.shadowBlur = 8;
     ctx.fillText(text, cx, cy);
-    ctx.shadowBlur = 0;
   }
 
-  function drawDoor(x, y, w, h, word, st, faded, color) {
-    var r = Math.min(18, h * 0.22);
+  function drawDoor(x, y, w, h, word, st, color) {
+    var r = Math.min(12, h * 0.16);
     var fill, stroke;
-    if (st === 1) { fill = 'rgba(34,197,94,0.95)'; stroke = '#4ade80'; }
-    else if (st === 2) { fill = 'rgba(239,68,68,0.95)'; stroke = '#f87171'; }
-    else { fill = hexA(color, 0.86); stroke = 'rgba(255,255,255,0.55)'; }
+    if (st === 1) { fill = '#248a58'; stroke = '#4ede9a'; }
+    else if (st === 2) { fill = '#b73036'; stroke = '#ff8b8f'; }
+    else { fill = hexA(color, 0.90); stroke = hexA(color, 1.0); }
 
-    ctx.save();
-    ctx.shadowColor = hexA(color, 0.55);
-    ctx.shadowBlur = 16;
     roundRect(ctx, x, y, w, h, r);
     ctx.fillStyle = fill;
     ctx.fill();
-    ctx.shadowBlur = 0;
-    ctx.lineWidth = 3;
+    ctx.lineWidth = 2;
     ctx.strokeStyle = stroke;
     ctx.stroke();
 
+    // banda superior sutil para dar volumen
     roundRect(ctx, x, y, w, h, r);
     ctx.save();
     ctx.clip();
-    ctx.fillStyle = 'rgba(255,255,255,0.10)';
-    ctx.fillRect(x, y, w, h * 0.16);
-    ctx.fillStyle = 'rgba(0,0,0,0.14)';
-    ctx.fillRect(x, y + h * 0.84, w, h * 0.16);
+    ctx.fillStyle = 'rgba(255,255,255,0.07)';
+    ctx.fillRect(x, y, w, h * 0.42);
     ctx.restore();
 
-    drawCellText(word, x + w / 2, y + h / 2, w - 16, h * 0.42);
-    ctx.restore();
+    drawCellText(word, x + w / 2, y + h / 2, w - 20, h * 0.52);
   }
 
   function drawOrb(x, cellY, h, word, st, color) {
     var cx = x + G.gateW / 2;
     var cy = cellY + h / 2;
-    var r = Math.min(G.gateW * 0.46, h * 0.42);
-    var c1 = st === 1 ? '#22c55e' : (st === 2 ? '#ef4444' : color);
+    var r = Math.min(G.gateW * 0.47, h * 0.44);
+    var c1 = st === 1 ? '#248a58' : (st === 2 ? '#b73036' : color);
 
     ctx.save();
-    var grd = ctx.createRadialGradient(cx - r * 0.3, cy - r * 0.35, r * 0.15, cx, cy, r);
-    grd.addColorStop(0, 'rgba(255,255,255,0.78)');
-    grd.addColorStop(0.35, c1);
-    grd.addColorStop(1, st === 2 ? '#7f1d1d' : (st === 1 ? '#14532d' : '#831843'));
-    ctx.shadowColor = st === 1 ? 'rgba(74,222,128,0.7)' : (st === 2 ? 'rgba(248,113,113,0.7)' : hexA(color, 0.6));
-    ctx.shadowBlur = 20;
+    var grd = ctx.createRadialGradient(cx - r * 0.3, cy - r * 0.35, r * 0.1, cx, cy, r);
+    grd.addColorStop(0, 'rgba(255,255,255,0.55)');
+    grd.addColorStop(0.4, c1);
+    grd.addColorStop(1, st === 1 ? '#0f3d28' : (st === 2 ? '#4a1416' : hexA(color, 0.45)));
     ctx.beginPath();
     ctx.arc(cx, cy, r, 0, Math.PI * 2);
     ctx.fillStyle = grd;
     ctx.fill();
-    ctx.shadowBlur = 0;
-    ctx.lineWidth = 3;
-    ctx.strokeStyle = 'rgba(255,255,255,0.65)';
+    ctx.lineWidth = 2;
+    ctx.strokeStyle = 'rgba(255,255,255,0.55)';
     ctx.stroke();
     drawCellText(word, cx, cy, r * 1.8, r * 0.62);
     ctx.restore();
@@ -623,38 +697,37 @@
 
   function drawGates() {
     var lvl = LEVELS[G.levelIndex] || LEVELS[0];
-    var pad = Math.max(6, G.laneH * 0.07);
+    var pad = Math.max(7, G.laneH * 0.06);
     for (var gi = 0; gi < G.gates.length; gi++) {
       var g = G.gates[gi];
       var alpha = g.state === 'active' ? 1 : clamp(1 - g.fade / 650, 0, 1);
-      var scale = g.state === 'active' ? 1 : (1 + g.fade / 650 * 0.06);
       ctx.save();
       ctx.globalAlpha = alpha;
 
       for (var i = 0; i < CFG.lanes; i++) {
         var y = G.laneH * i + pad;
         var h = G.laneH - pad * 2;
-        var w = G.gateW * scale;
-        var x = g.x;
-        if (lvl.mode === 'collect') drawOrb(x, y, h, g.words[i], g.cellState[i], lvl.color);
-        else drawDoor(x, y, w, h, g.words[i], g.cellState[i], g.state, lvl.color);
+        if (lvl.mode === 'collect') drawOrb(g.x, y, h, g.words[i], g.cellState[i], lvl.color);
+        else drawDoor(g.x, y, G.gateW, h, g.words[i], g.cellState[i], lvl.color);
       }
 
       if (G.highlight && g.state === 'active') {
         var hy = G.laneH * g.correctLane + pad;
         var hh = G.laneH - pad * 2;
-        ctx.strokeStyle = 'rgba(74,222,128,0.95)';
-        ctx.lineWidth = 5;
-        ctx.setLineDash([14, 10]);
-        ctx.lineDashOffset = -(G.dist * 0.4 % 24);
-        roundRect(ctx, g.x + 3, hy + 3, G.gateW - 6, hh - 6, 16);
+        ctx.strokeStyle = 'rgba(78,222,154,0.95)';
+        ctx.lineWidth = 3;
+        ctx.setLineDash([12, 9]);
+        ctx.lineDashOffset = -(G.dist * 0.4 % 21);
+        roundRect(ctx, g.x + 4, hy + 4, G.gateW - 8, hh - 8, 10);
         ctx.stroke();
-        ctx.setLineDash([]);
-        ctx.font = '700 26px ' + FONT;
-        ctx.fillStyle = '#4ade80';
+        ctx.restore();
+        ctx.save();
+        ctx.font = '700 15px ' + FONT;
+        ctx.fillStyle = '#4ede9a';
         ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';
-        ctx.fillText('👉', g.x + G.gateW + 24, G.laneH * g.correctLane + G.laneH / 2);
+        ctx.fillText('¡aquí!', g.x + G.gateW / 2, hy - 12);
+        ctx.restore();
       }
       ctx.restore();
     }
@@ -664,18 +737,18 @@
     var x = G.playerX;
     var y = G.laneY;
     var lvl = LEVELS[G.levelIndex] || LEVELS[0];
-    var s = clamp(G.laneH * 0.30, 20, 46);
+    var s = clamp(G.laneH * 0.28, 20, 44);
     var ph = G.runPhase * 6;
     var body = lvl.color;
 
     ctx.save();
-    ctx.fillStyle = 'rgba(0,0,0,0.35)';
+    ctx.fillStyle = 'rgba(0,0,0,0.4)';
     ctx.beginPath();
-    ctx.ellipse(x, y + s * 0.95, s * 0.72, s * 0.20, 0, 0, Math.PI * 2);
+    ctx.ellipse(x, y + s * 0.95, s * 0.72, s * 0.19, 0, 0, Math.PI * 2);
     ctx.fill();
 
     var bob = Math.sin(ph) * s * 0.06;
-    ctx.strokeStyle = '#1e293b';
+    ctx.strokeStyle = '#2b3444';
     ctx.lineWidth = Math.max(4, s * 0.15);
     ctx.lineCap = 'round';
     ctx.beginPath();
@@ -686,41 +759,34 @@
     ctx.stroke();
 
     var by = y - s * 0.10 + bob;
-    ctx.save();
-    ctx.shadowColor = hexA(body, 0.6);
-    ctx.shadowBlur = 14;
-    roundRect(ctx, x - s * 0.34, by - s * 0.30, s * 0.68, s * 0.72, s * 0.26);
+    roundRect(ctx, x - s * 0.33, by - s * 0.30, s * 0.66, s * 0.70, s * 0.22);
     ctx.fillStyle = body;
     ctx.fill();
-    ctx.restore();
 
     ctx.strokeStyle = body;
     ctx.lineWidth = Math.max(4, s * 0.14);
     ctx.beginPath();
-    ctx.moveTo(x - s * 0.28, by + s * 0.02);
-    ctx.lineTo(x - s * 0.28 + Math.sin(ph + Math.PI) * s * 0.36, by + s * 0.28);
-    ctx.moveTo(x + s * 0.28, by + s * 0.02);
-    ctx.lineTo(x + s * 0.28 + Math.sin(ph) * s * 0.36, by + s * 0.28);
+    ctx.moveTo(x - s * 0.27, by + s * 0.02);
+    ctx.lineTo(x - s * 0.27 + Math.sin(ph + Math.PI) * s * 0.34, by + s * 0.28);
+    ctx.moveTo(x + s * 0.27, by + s * 0.02);
+    ctx.lineTo(x + s * 0.27 + Math.sin(ph) * s * 0.34, by + s * 0.28);
     ctx.stroke();
 
     var hy = by - s * 0.70;
     ctx.beginPath();
-    ctx.arc(x, hy, s * 0.40, 0, Math.PI * 2);
-    ctx.fillStyle = '#fcd9b6';
+    ctx.arc(x, hy, s * 0.38, 0, Math.PI * 2);
+    ctx.fillStyle = '#f2d3b3';
     ctx.fill();
-    ctx.lineWidth = 2.5;
-    ctx.strokeStyle = 'rgba(0,0,0,0.15)';
-    ctx.stroke();
 
-    ctx.fillStyle = '#0f172a';
+    ctx.fillStyle = '#141922';
     ctx.beginPath();
-    ctx.arc(x - s * 0.14, hy - s * 0.05, Math.max(1.6, s * 0.055), 0, Math.PI * 2);
-    ctx.arc(x + s * 0.14, hy - s * 0.05, Math.max(1.6, s * 0.055), 0, Math.PI * 2);
+    ctx.arc(x - s * 0.13, hy - s * 0.05, Math.max(1.5, s * 0.052), 0, Math.PI * 2);
+    ctx.arc(x + s * 0.13, hy - s * 0.05, Math.max(1.5, s * 0.052), 0, Math.PI * 2);
     ctx.fill();
-    ctx.strokeStyle = '#0f172a';
-    ctx.lineWidth = Math.max(1.6, s * 0.05);
+    ctx.strokeStyle = '#141922';
+    ctx.lineWidth = Math.max(1.5, s * 0.048);
     ctx.beginPath();
-    ctx.arc(x, hy + s * 0.06, s * 0.16, 0.15 * Math.PI, 0.85 * Math.PI);
+    ctx.arc(x, hy + s * 0.05, s * 0.15, 0.15 * Math.PI, 0.85 * Math.PI);
     ctx.stroke();
     ctx.restore();
   }
@@ -740,7 +806,7 @@
     for (i = 0; i < G.popups.length; i++) {
       var q = G.popups[i];
       ctx.globalAlpha = clamp(1 - q.t / q.life, 0, 1);
-      ctx.font = '800 22px ' + FONT;
+      ctx.font = '700 22px ' + FONT;
       ctx.fillStyle = q.color;
       ctx.textAlign = 'left';
       ctx.textBaseline = 'middle';
@@ -752,7 +818,7 @@
   function render() {
     ctx.save();
     if (G.shake > 0) {
-      var m = G.shake / 320 * 7;
+      var m = G.shake / 320 * 6;
       ctx.translate(rnd(-m, m), rnd(-m, m));
     }
     drawBackground();
@@ -771,7 +837,10 @@
     dt = Math.min(dt, 48);
 
     if (G.screen === 'playing') update(dt);
-    else { G.dist += dt * 0.28; if (G.screen === 'menu' || G.screen === 'tutorial') menuDrift(); }
+    else {
+      G.dist += dt * 0.22;
+      if (G.screen === 'menu' || G.screen === 'vocab' || G.screen === 'tutorial') menuDrift();
+    }
     render();
   }
 
@@ -779,7 +848,7 @@
   var tStep = 0;
   function renderTutorial() {
     var s = TUTORIAL_STEPS[tStep];
-    document.getElementById('tut-emoji').textContent = s.emoji;
+    document.getElementById('tut-icon').innerHTML = icon(s.icon, 26);
     document.getElementById('tut-title').textContent = s.title;
     document.getElementById('tut-text').textContent = s.text;
     var dots = '';
@@ -787,7 +856,7 @@
     document.getElementById('tut-dots').innerHTML = dots;
     document.getElementById('btn-tut-prev').style.visibility = tStep === 0 ? 'hidden' : 'visible';
     document.getElementById('btn-tut-next').textContent =
-      (tStep === TUTORIAL_STEPS.length - 1) ? '¡Empezar la práctica! 🎯' : 'Siguiente ➜';
+      (tStep === TUTORIAL_STEPS.length - 1) ? 'Empezar la práctica' : 'Siguiente';
   }
   function tutNext() {
     if (tStep >= TUTORIAL_STEPS.length - 1) { startPractice(); return; }
@@ -796,25 +865,49 @@
   }
   function tutPrev() { if (tStep > 0) { tStep--; renderTutorial(); } }
 
-  /* ---------------- Anima el fondo mientras no se juega ---------------- */
   function menuDrift() {
     G.runPhase += 0.05;
     G.laneY = laneCenter(1) + Math.sin(Date.now() / 700) * (G.H * 0.10);
   }
 
-  /* ---------------- Conexión de botones ---------------- */
+  /* ---------------- Conexión de la interfaz ---------------- */
   function wire() {
+    // iconos dentro de los botones y de las teclas
+    var slots = document.querySelectorAll('[data-icon]');
+    for (var i = 0; i < slots.length; i++) {
+      var size = parseInt(slots[i].dataset.iconSize || '18', 10);
+      slots[i].innerHTML = icon(slots[i].dataset.icon, size);
+    }
+    document.getElementById('btn-up').innerHTML = icon('chevron-up', 30);
+    document.getElementById('btn-down').innerHTML = icon('chevron-down', 30);
+    document.getElementById('practice-icon').innerHTML = icon('circle-check', 26);
+    document.getElementById('done-icon').innerHTML = icon('award', 26);
+    document.getElementById('over-icon').innerHTML = icon('triangle-alert', 26);
+    document.getElementById('pause-icon').innerHTML = icon('pause', 26);
+
     document.getElementById('btn-play').addEventListener('click', startGame);
     document.getElementById('btn-tutorial').addEventListener('click', function () {
-      tStep = 0; renderTutorial(); showOverlay('screen-tutorial');
+      tStep = 0; renderTutorial(); showOverlay('screen-tutorial'); setScreen('tutorial');
     });
     document.getElementById('btn-tut-next').addEventListener('click', tutNext);
     document.getElementById('btn-tut-prev').addEventListener('click', tutPrev);
     document.getElementById('btn-tut-skip').addEventListener('click', startGame);
     document.getElementById('btn-practice-end').addEventListener('click', restart);
+
+    document.getElementById('vocab-list').addEventListener('click', function (e) {
+      var b = e.target.closest ? e.target.closest('.speak') : null;
+      if (b && b.dataset.say) say(b.dataset.say);
+    });
+    document.getElementById('btn-vocab-play').addEventListener('click', closeVocab);
+    document.getElementById('btn-vocab-back').addEventListener('click', function () {
+      G.afterVocab = null; goMenu();
+    });
+    document.getElementById('btn-vocab-again').addEventListener('click', function () {
+      openVocab(G.levelIndex, false);
+    });
+
     document.getElementById('btn-continue').addEventListener('click', function () {
-      hideOverlays();
-      startLevel(parseInt(this.dataset.next, 10));
+      openVocab(parseInt(this.dataset.next, 10), true);
     });
     document.getElementById('btn-retry').addEventListener('click', restart);
     document.getElementById('btn-menu').addEventListener('click', goMenu);
@@ -828,14 +921,14 @@
     updateMuteBtn();
 
     // Utilidad de desarrollo: permite probar el juego desde la consola.
-    // Ejemplo: GRAMMAR_RUNNER.startLevel(2)
     window.GRAMMAR_RUNNER = {
       get state() { return G; },
       levels: LEVELS,
       move: move,
       startGame: startGame,
-      startPractice: startPractice,
       startLevel: startLevel,
+      startPractice: startPractice,
+      openVocab: openVocab,
       goMenu: goMenu
     };
   }
@@ -846,11 +939,13 @@
     ctx = cv.getContext('2d');
     stage = document.getElementById('stage');
     promptEl = document.getElementById('prompt');
-    elEmoji = document.getElementById('prompt-emoji');
-    elText = document.getElementById('prompt-text');
-    elHint = document.getElementById('prompt-hint');
+    elIcon = document.getElementById('prompt-icon');
+    elEs = document.getElementById('prompt-es');
+    elEn = document.getElementById('prompt-en');
     elTag = document.getElementById('prompt-tag');
+    elCue = document.getElementById('prompt-cue');
     elLevel = document.getElementById('hud-level');
+    elProgress = document.getElementById('hud-progress');
     elScore = document.getElementById('hud-score');
     elLives = document.getElementById('hud-lives');
     elStreak = document.getElementById('hud-streak');

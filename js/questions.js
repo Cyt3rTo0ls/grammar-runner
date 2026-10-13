@@ -1,290 +1,374 @@
 /* ============================================================
    Grammar Runner: Word Switch
-   Contenido educativo (niveles y preguntas)
+   Contenido educativo
    ------------------------------------------------------------
+   Cada nivel tiene:
+     vocab  -> lista de palabras que se muestran ANTES de jugar
+               (la persona primero aprende, después juega)
+     items  -> las preguntas
+
    Cada pregunta tiene:
-     emoji    -> el "dibujo" que se muestra arriba
-     sentence -> la frase en español con el espacio en blanco ___
-     hint     -> pista corta en español (por ejemplo, "(Él)")
-     pattern  -> etiqueta del nivel 3 (tipo de cambio del verbo)
-     options  -> 3 palabras en inglés (se mezclan al jugar)
-     correct  -> índice de la opción correcta
-     explain  -> recordatorio corto que se muestra si fallas o aciertas
+     icon     nombre del icono que se muestra en la pista
+     es       la frase en español, con "___" en el espacio en blanco
+     en       la misma frase en inglés (refuerzo y contexto)
+     cue      la pista corta en español: el significado que deben encontrar
+     options  las 3 palabras en inglés (se mezclan al azar)
+     correct  índice de la opción correcta
+     meaning  qué significa la palabra correcta
+     explain  explicación que se muestra al acertar o al fallar
    ============================================================ */
 
 const LEVELS = [
-  /* ---------------- NIVEL 1: Pronombres personales ---------------- */
+  /* ======================= NIVEL 1 ======================= */
   {
     id: 1,
-    title: 'Pronombres Personales',
-    subtitle: 'Paso 1 · ¿Quién hace la acción?',
+    title: 'Pronombres personales',
+    subtitle: '¿Quién hace la acción?',
     tag: 'Elige el pronombre correcto',
     mode: 'gate',
     speed: 1.0,
-    color: '#38bdf8',
+    color: '#3b82f6',
+    vocab: [
+      { en: 'I', es: 'yo', tip: 'Siempre se escribe con mayúscula.' },
+      { en: 'You', es: 'tú / ustedes', tip: 'Sirve para una o varias personas.' },
+      { en: 'He', es: 'él', tip: 'Para un hombre o un niño.' },
+      { en: 'She', es: 'ella', tip: 'Para una mujer o una niña.' },
+      { en: 'It', es: 'eso, él', tip: 'Para cosas, animales o ideas.' },
+      { en: 'We', es: 'nosotros', tip: 'Incluye a quien habla.' },
+      { en: 'They', es: 'ellos / ellas', tip: 'Para varias personas o cosas.' }
+    ],
     items: [
       {
-        emoji: '🏃',
-        sentence: '___ corro todos los días.',
-        hint: '(Yo)',
+        icon: 'footprints',
+        es: '___ corro todos los días.',
+        en: '___ run every day.',
+        cue: 'yo',
         options: ['I', 'You', 'She'],
         correct: 0,
-        explain: '«I» significa «yo». En inglés siempre va con mayúscula.'
+        meaning: 'I = yo',
+        explain: '«I» significa «yo». En inglés siempre se escribe con mayúscula, aunque esté en medio de la frase.'
       },
       {
-        emoji: '🙋',
-        sentence: '___ eres muy amable.',
-        hint: '(Tú)',
+        icon: 'hand-heart',
+        es: '___ eres muy amable.',
+        en: '___ are very kind.',
+        cue: 'tú',
         options: ['He', 'You', 'They'],
         correct: 1,
-        explain: '«You» significa «tú» y también «ustedes».'
+        meaning: 'You = tú',
+        explain: '«You» significa «tú». Se usa igual para una sola persona o para varias.'
       },
       {
-        emoji: '👦',
-        sentence: '___ corre muy rápido.',
-        hint: '(Él)',
+        icon: 'zap',
+        es: '___ corre muy rápido.',
+        en: '___ runs very fast.',
+        cue: 'él',
         options: ['She', 'It', 'He'],
         correct: 2,
-        explain: '«He» significa «él».'
+        meaning: 'He = él',
+        explain: '«He» significa «él». Fíjate que el verbo lleva -s: he runs, she runs, it runs.'
       },
       {
-        emoji: '👩',
-        sentence: '___ habla por teléfono.',
-        hint: '(Ella)',
+        icon: 'phone',
+        es: '___ habla por teléfono.',
+        en: '___ talks on the phone.',
+        cue: 'ella',
         options: ['She', 'He', 'We'],
         correct: 0,
-        explain: '«She» significa «ella».'
+        meaning: 'She = ella',
+        explain: '«She» significa «ella». También lleva el verbo con -s: she talks.'
       },
       {
-        emoji: '🐶',
-        sentence: 'El perro es pequeño, ___ es rápido.',
-        hint: '(para cosas o animales)',
+        icon: 'dog',
+        es: 'El perro es pequeño, ___ es rápido.',
+        en: 'The dog is small, ___ is fast.',
+        cue: 'eso (cosas y animales)',
         options: ['It', 'They', 'I'],
         correct: 0,
-        explain: '«It» se usa para cosas, animales o ideas en singular.'
+        meaning: 'It = eso, él',
+        explain: '«It» se usa para cosas, animales o ideas en singular. Para una sola cosa no uses «they».'
       },
       {
-        emoji: '⚽',
-        sentence: '___ jugamos fútbol el domingo.',
-        hint: '(Nosotros)',
+        icon: 'volleyball',
+        es: '___ jugamos fútbol el domingo.',
+        en: '___ play soccer on Sunday.',
+        cue: 'nosotros',
         options: ['They', 'We', 'You'],
         correct: 1,
-        explain: '«We» significa «nosotros».'
+        meaning: 'We = nosotros',
+        explain: '«We» significa «nosotros» e incluye a la persona que habla. El verbo va sin -s: we play.'
       },
       {
-        emoji: '👨‍👩‍👧',
-        sentence: '___ son mis vecinos.',
-        hint: '(Ellos)',
+        icon: 'users',
+        es: '___ son mis vecinos.',
+        en: '___ are my neighbors.',
+        cue: 'ellos',
         options: ['We', 'She', 'They'],
         correct: 2,
-        explain: '«They» significa «ellos» o «ellas».'
+        meaning: 'They = ellos / ellas',
+        explain: '«They» significa «ellos» o «ellas». Es el plural de he, she y it.'
       }
     ]
   },
 
-  /* ---------------- NIVEL 2: Posesivos ---------------- */
+  /* ======================= NIVEL 2 ======================= */
   {
     id: 2,
     title: 'Posesivos: My o Mine',
-    subtitle: 'Paso 2 · ¿Va antes del objeto o va solo?',
+    subtitle: '¿Va antes del objeto o va solo?',
     tag: '¿Adjetivo posesivo o pronombre posesivo?',
     mode: 'gate',
-    speed: 1.08,
-    color: '#a78bfa',
+    speed: 1.06,
+    color: '#7c3aed',
+    vocab: [
+      { en: 'My', es: 'mi', tip: 'Va ANTES del objeto: my bike (mi bicicleta).' },
+      { en: 'Mine', es: 'mío / mía', tip: 'Va SOLO, sin objeto: it is mine (es mía).' },
+      { en: 'Your', es: 'tu', tip: 'Va ANTES del objeto: your backpack (tu mochila).' },
+      { en: 'Yours', es: 'tuyo / tuya', tip: 'Va SOLO: it is yours (es tuyo).' },
+      { en: 'Our', es: 'nuestro', tip: 'Va ANTES del objeto: our house (nuestra casa).' },
+      { en: 'Ours', es: 'nuestro / nuestra', tip: 'Va SOLO: it is ours (es nuestra).' },
+      { en: 'Me', es: 'me / a mí', tip: 'No marca posesión. Ejemplo: give it to me.' }
+    ],
     items: [
       {
-        emoji: '🚲',
-        sentence: 'Esa es ___ bicicleta.',
-        hint: '(mi + objeto)',
+        icon: 'bike',
+        es: 'Esa es ___ bicicleta.',
+        en: 'That is ___ bike.',
+        cue: 'mi (antes del objeto)',
         options: ['My', 'Mine', 'Me'],
         correct: 0,
-        explain: '«My» va ANTES del objeto: my bike = mi bicicleta.'
+        meaning: 'My = mi',
+        explain: '«My» va ANTES del objeto: my bike = mi bicicleta. Nunca digas «mine bike».'
       },
       {
-        emoji: '🚲',
-        sentence: 'Esa bicicleta es ___.',
-        hint: '(mía, sin objeto)',
+        icon: 'bike',
+        es: 'Esa bicicleta es ___.',
+        en: 'That bike is ___.',
+        cue: 'mía (va sola)',
         options: ['My', 'Mine', 'Me'],
         correct: 1,
-        explain: '«Mine» va SOLO, sin objeto: the bike is mine = la bicicleta es mía.'
+        meaning: 'Mine = mío / mía',
+        explain: '«Mine» va SOLO, sin objeto: that bike is mine = esa bicicleta es mía.'
       },
       {
-        emoji: '📚',
-        sentence: 'Este es ___ libro favorito.',
-        hint: '(mi + objeto)',
+        icon: 'book',
+        es: 'Este es ___ libro favorito.',
+        en: 'This is ___ favorite book.',
+        cue: 'mi (antes del objeto)',
         options: ['Mine', 'My', 'I'],
         correct: 1,
+        meaning: 'My = mi',
         explain: '«My» va antes del objeto: my book = mi libro.'
       },
       {
-        emoji: '📚',
-        sentence: 'Ese libro es ___.',
-        hint: '(mío, sin objeto)',
+        icon: 'book-open',
+        es: 'Ese libro es ___.',
+        en: 'That book is ___.',
+        cue: 'mío (va solo)',
         options: ['Me', 'Mine', 'My'],
         correct: 1,
-        explain: '«Mine» va solo: the book is mine = el libro es mío.'
+        meaning: 'Mine = mío / mía',
+        explain: '«Mine» va solo: that book is mine = ese libro es mío.'
       },
       {
-        emoji: '👟',
-        sentence: 'Esos zapatos son ___.',
-        hint: '(tuyos, sin objeto)',
+        icon: 'footprints',
+        es: 'Esos zapatos son ___.',
+        en: 'Those shoes are ___.',
+        cue: 'tuyos (va solo)',
         options: ['Your', 'Yours', 'You'],
         correct: 1,
+        meaning: 'Yours = tuyo / tuya',
         explain: '«Yours» va solo: the shoes are yours = los zapatos son tuyos.'
       },
       {
-        emoji: '🎒',
-        sentence: 'Está en ___ mochila.',
-        hint: '(tu + objeto)',
+        icon: 'backpack',
+        es: 'Está en ___ mochila.',
+        en: 'It is in ___ backpack.',
+        cue: 'tu (antes del objeto)',
         options: ['Your', 'Yours', 'You'],
         correct: 0,
+        meaning: 'Your = tu',
         explain: '«Your» va antes del objeto: your backpack = tu mochila.'
       },
       {
-        emoji: '🏠',
-        sentence: 'La casa roja es ___.',
-        hint: '(nuestra, sin objeto)',
+        icon: 'house',
+        es: 'La casa roja es ___.',
+        en: 'The red house is ___.',
+        cue: 'nuestra (va sola)',
         options: ['Our', 'Ours', 'Us'],
         correct: 1,
+        meaning: 'Ours = nuestro / nuestra',
         explain: '«Ours» va solo: the red house is ours = la casa roja es nuestra.'
       }
     ]
   },
 
-  /* ---------------- NIVEL 3: Verbos irregulares ---------------- */
+  /* ======================= NIVEL 3 ======================= */
   {
     id: 3,
-    title: 'Laboratorio de Verbos Irregulares',
-    subtitle: 'Paso 3 · Presente ➜ Pasado',
+    title: 'Verbos irregulares',
+    subtitle: 'Presente y pasado',
     tag: 'Atrapa el pasado correcto',
     mode: 'collect',
-    speed: 1.15,
-    color: '#f472b6',
+    speed: 1.12,
+    color: '#f59e0b',
+    vocab: [
+      { en: 'drink / drank / drunk', es: 'beber', tip: 'Cambia solo una letra.' },
+      { en: 'eat / ate / eaten', es: 'comer', tip: 'La palabra cambia completa.' },
+      { en: 'go / went / gone', es: 'ir', tip: 'Forma nueva, no se parece.' },
+      { en: 'see / saw / seen', es: 'ver', tip: 'Cambia la vocal.' },
+      { en: 'run / ran / run', es: 'correr', tip: 'Cambia una letra.' },
+      { en: 'write / wrote / written', es: 'escribir', tip: 'Cambia la vocal.' },
+      { en: 'take / took / taken', es: 'tomar', tip: 'Cambia una letra.' },
+      { en: 'break / broke / broken', es: 'romper', tip: 'Cambia la vocal.' },
+      { en: 'speak / spoke / spoken', es: 'hablar', tip: 'Cambia la vocal.' },
+      { en: 'sleep / slept / slept', es: 'dormir', tip: 'La vocal larga se vuelve corta.' }
+    ],
     items: [
       {
-        emoji: '🥤',
-        sentence: 'DRINK',
-        hint: 'Presente ➜ busca el Pasado',
-        pattern: 'Patrón ABC · cambia solo una letra',
+        icon: 'cup-soda',
+        es: 'BEBER · ¿cuál es el pasado?',
+        en: 'DRINK · what is the past form?',
+        cue: 'presente / pasado',
+        pattern: 'Cambia solo una letra',
         options: ['drank', 'drinked', 'dronk'],
         correct: 0,
-        explain: 'DRINK ➜ DRANK ➜ DRUNK. ¡Cambia solo una letra! Nunca «drinked».'
+        meaning: 'DRINK / DRANK = bebió',
+        explain: 'DRINK / DRANK / DRUNK. ¡Cambia solo una letra! Nunca se dice «drinked».'
       },
       {
-        emoji: '🍔',
-        sentence: 'EAT',
-        hint: 'Presente ➜ busca el Pasado',
-        pattern: 'Patrón ABC · la palabra cambia completa',
+        icon: 'utensils',
+        es: 'COMER · ¿cuál es el pasado?',
+        en: 'EAT · what is the past form?',
+        cue: 'presente / pasado',
+        pattern: 'La palabra cambia completa',
         options: ['ated', 'ate', 'eaten'],
         correct: 1,
-        explain: 'EAT ➜ ATE ➜ EATEN. No digas «eated».'
+        meaning: 'EAT / ATE = comió',
+        explain: 'EAT / ATE / EATEN. No se dice «eated».'
       },
       {
-        emoji: '🚶',
-        sentence: 'GO',
-        hint: 'Presente ➜ busca el Pasado',
-        pattern: 'Forma nueva · no se parece al presente',
+        icon: 'arrow-right',
+        es: 'IR · ¿cuál es el pasado?',
+        en: 'GO · what is the past form?',
+        cue: 'presente / pasado',
+        pattern: 'Forma nueva, no se parece',
         options: ['goed', 'gone', 'went'],
         correct: 2,
-        explain: 'GO ➜ WENT ➜ GONE. Nunca «goed».'
+        meaning: 'GO / WENT = fue',
+        explain: 'GO / WENT / GONE. Nunca se dice «goed».'
       },
       {
-        emoji: '👀',
-        sentence: 'SEE',
-        hint: 'Presente ➜ busca el Pasado',
+        icon: 'eye',
+        es: 'VER · ¿cuál es el pasado?',
+        en: 'SEE · what is the past form?',
+        cue: 'presente / pasado',
         pattern: 'Cambia la vocal',
         options: ['saw', 'seed', 'seen'],
         correct: 0,
-        explain: 'SEE ➜ SAW ➜ SEEN. No digas «seed».'
+        meaning: 'SEE / SAW = vio',
+        explain: 'SEE / SAW / SEEN. No se dice «seed».'
       },
       {
-        emoji: '🏃',
-        sentence: 'RUN',
-        hint: 'Presente ➜ busca el Pasado',
+        icon: 'footprints',
+        es: 'CORRER · ¿cuál es el pasado?',
+        en: 'RUN · what is the past form?',
+        cue: 'presente / pasado',
         pattern: 'Cambia solo una letra',
         options: ['runned', 'ran', 'ranned'],
         correct: 1,
-        explain: 'RUN ➜ RAN ➜ RUN. No digas «runned».'
+        meaning: 'RUN / RAN = corrió',
+        explain: 'RUN / RAN / RUN. No se dice «runned».'
       },
       {
-        emoji: '✍️',
-        sentence: 'WRITE',
-        hint: 'Presente ➜ busca el Pasado',
-        pattern: 'Cambia solo una letra',
+        icon: 'pen-line',
+        es: 'ESCRIBIR · ¿cuál es el pasado?',
+        en: 'WRITE · what is the past form?',
+        cue: 'presente / pasado',
+        pattern: 'Cambia la vocal',
         options: ['writed', 'wrote', 'wroten'],
         correct: 1,
-        explain: 'WRITE ➜ WROTE ➜ WRITTEN.'
+        meaning: 'WRITE / WROTE = escribió',
+        explain: 'WRITE / WROTE / WRITTEN.'
       },
       {
-        emoji: '📸',
-        sentence: 'TAKE',
-        hint: 'Presente ➜ busca el Pasado',
-        pattern: 'Cambia solo una letra',
+        icon: 'camera',
+        es: 'TOMAR UNA FOTO · ¿cuál es el pasado?',
+        en: 'TAKE · what is the past form?',
+        cue: 'presente / pasado',
+        pattern: 'Cambia una letra',
         options: ['took', 'taked', 'tooken'],
         correct: 0,
-        explain: 'TAKE ➜ TOOK ➜ TAKEN.'
+        meaning: 'TAKE / TOOK = tomó',
+        explain: 'TAKE / TOOK / TAKEN.'
       },
       {
-        emoji: '💥',
-        sentence: 'BREAK',
-        hint: 'Presente ➜ busca el Pasado',
+        icon: 'triangle-alert',
+        es: 'ROMPER · ¿cuál es el pasado?',
+        en: 'BREAK · what is the past form?',
+        cue: 'presente / pasado',
         pattern: 'Cambia la vocal',
         options: ['breaked', 'broked', 'broke'],
         correct: 2,
-        explain: 'BREAK ➜ BROKE ➜ BROKEN.'
+        meaning: 'BREAK / BROKE = rompió',
+        explain: 'BREAK / BROKE / BROKEN.'
       },
       {
-        emoji: '🗣️',
-        sentence: 'SPEAK',
-        hint: 'Presente ➜ busca el Pasado',
+        icon: 'message-circle',
+        es: 'HABLAR · ¿cuál es el pasado?',
+        en: 'SPEAK · what is the past form?',
+        cue: 'presente / pasado',
         pattern: 'Cambia la vocal',
         options: ['speaked', 'spoke', 'spoked'],
         correct: 1,
-        explain: 'SPEAK ➜ SPOKE ➜ SPOKEN.'
+        meaning: 'SPEAK / SPOKE = habló',
+        explain: 'SPEAK / SPOKE / SPOKEN.'
       },
       {
-        emoji: '😴',
-        sentence: 'SLEEP',
-        hint: 'Presente ➜ busca el Pasado',
-        pattern: 'Cambia la vocal',
+        icon: 'bed',
+        es: 'DORMIR · ¿cuál es el pasado?',
+        en: 'SLEEP · what is the past form?',
+        cue: 'presente / pasado',
+        pattern: 'La vocal larga se vuelve corta',
         options: ['slept', 'sleeped', 'sleept'],
         correct: 0,
-        explain: 'SLEEP ➜ SLEPT ➜ SLEPT. La vocal larga se vuelve corta.'
+        meaning: 'SLEEP / SLEPT = durmió',
+        explain: 'SLEEP / SLEPT / SLEPT.'
       }
     ]
   }
 ];
 
-/* Pasos del tutorial (español de Latinoamérica, simple y corto) */
+/* Pasos del tutorial: español de Latinoamérica, simple y corto */
 const TUTORIAL_STEPS = [
   {
-    emoji: '👋',
-    title: '¡Hola! Bienvenido al juego',
-    text: 'Vas a correr por 3 carriles. Arriba aparece una pista en español y tú eliges la puerta con la palabra correcta en inglés. Aprenderás y te divertirás al mismo tiempo.'
+    icon: 'target',
+    title: 'De qué se trata',
+    text: 'Vas a correr por 3 carriles y elegir la puerta con la palabra correcta en inglés. Ganas puntos por cada acierto.'
   },
   {
-    emoji: '⬆️⬇️',
-    title: 'Muévete entre los carriles',
-    text: 'En la laptop usa las flechas ARRIBA y ABAJO (o las teclas W y S). En el iPad desliza el dedo hacia arriba o hacia abajo, o toca los botones de la esquina.'
+    icon: 'chevron-down',
+    title: 'Cómo te mueves',
+    text: 'En la laptop usa las flechas ARRIBA y ABAJO, o las teclas W y S. En el iPad desliza el dedo hacia arriba o hacia abajo, o toca los botones de la esquina.'
   },
   {
-    emoji: '🖼️',
-    title: 'Lee bien la pista',
-    text: 'Arriba verás un dibujo y una frase en español con un espacio en blanco ___. Ese espacio es la palabra en inglés que tienes que encontrar.'
+    icon: 'languages',
+    title: 'Las frases son bilingües',
+    text: 'Arriba verás la frase en español y debajo la misma frase en inglés. El espacio en blanco es la palabra que tienes que encontrar.'
   },
   {
-    emoji: '🚪',
-    title: 'Cruza la puerta correcta',
-    text: 'Cada puerta tiene una palabra en inglés. Si llegas a la puerta correcta ganas 10 puntos. Si chocas con una puerta equivocada pierdes una vida ❤️ y te mostramos un recordatorio para que lo recuerdes.'
+    icon: 'graduation-cap',
+    title: 'Primero el vocabulario',
+    text: 'Antes de cada nivel aparece la lista de palabras con su significado. Léela con calma: así ya vas a reconocer las respuestas cuando aparezcan las puertas.'
   },
   {
-    emoji: '🧪',
-    title: 'Nivel especial: verbos irregulares',
-    text: 'En el laboratorio verás un verbo en presente, como DRINK. Atrapa el pasado correcto (DRANK) y esquiva los falsos (drinked, dronk).'
+    icon: 'circle-check',
+    title: 'Aciertos y errores',
+    text: 'Si cruzas la puerta correcta ganas puntos. Si chocas pierdes una vida y te mostramos el significado de la palabra. Tienes 3 vidas.'
   },
   {
-    emoji: '🎯',
+    icon: 'target',
     title: 'Practiquemos una vez',
-    text: 'Ahora haz una práctica corta. No pierdes vidas aquí. Te vamos a marcar el carril correcto para que entiendas la mecánica.'
+    text: 'Ahora viene una práctica corta con el carril correcto marcado en verde. Aquí no pierdes vidas: es solo para que entiendas la mecánica.'
   }
 ];

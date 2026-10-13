@@ -16,10 +16,11 @@ botones en pantalla). No necesita internet ni instalar nada: HTML, CSS y JavaScr
 ## Cómo se juega
 
 1. **Primero el vocabulario.** Antes de cada nivel aparece la lista de palabras con su
-   significado. Si el equipo tiene voces instaladas, cada palabra trae un altavoz para
-   escuchar la pronunciación en inglés (si no las tiene, el altavoz no se muestra).
+   significado y un ejemplo.
 2. **Lee la pista.** Arriba verás la frase en español y debajo la misma frase en inglés,
-   con un espacio en blanco `___`. Esa es la palabra que tienes que encontrar.
+   con un espacio en blanco `___`. Esa es la palabra que tienes que encontrar. Al lado hay
+   una pista corta con el significado (`Pista: yo`); si la quieres ocultar, toca el botón
+   del ojo de arriba para practicar sin ayuda.
 3. **Elige la puerta.** Tres puertas con palabras en inglés vienen hacia ti.
    - **Laptop:** flechas `↑` `↓` o las teclas `W` / `S`.
    - **iPad:** desliza el dedo hacia arriba o hacia abajo, o toca los botones de la esquina.
@@ -27,7 +28,11 @@ botones en pantalla). No necesita internet ni instalar nada: HTML, CSS y JavaScr
    Si fallas pierdes una vida y te mostramos la respuesta correcta con su significado y una
    explicación corta.
 
-Otras teclas: `P` o `Esc` = pausa · `M` = silenciar sonido.
+En la barra superior tienes siempre: la pista (ojo), el sonido (altavoz) y el botón
+**Pausa**.
+
+Otras teclas: `P` o `Esc` = pausa · `M` = silenciar sonido · `H` = mostrar u ocultar la
+pista con el significado.
 
 ### ¿Por qué no se traduce sola la página?
 El navegador (Firefox, Chrome, Safari) a veces traduce las palabras en inglés de la página y
@@ -111,8 +116,8 @@ Los iconos disponibles están en `js/icons.js` (por ejemplo `bike`, `dog`, `book
 
 - **Iconos:** [Lucide](https://lucide.dev) — licencia ISC. Están incluidos como SVG dentro
   de `js/icons.js`, así que el juego no depende de ninguna CDN.
-- **Sonido y voz:** generados por el navegador (Web Audio API y `speechSynthesis`), sin
-  archivos externos.
+- **Sonido:** generado por el navegador con la Web Audio API, sin archivos externos.
+  Se activa o silencia con el botón de la esquina superior.
 - El resto del código es propio y no tiene dependencias.
 
 ## Nota para desarrollo

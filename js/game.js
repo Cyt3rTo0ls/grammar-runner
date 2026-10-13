@@ -92,6 +92,7 @@
     lastT: 0,
     shake: 0,
     mute: store.get('gr_mute', '0') === '1',
+    hideHint: store.get('gr_hint', '0') === '1',
     afterVocab: null,   // qué hacer al cerrar el vocabulario
     W: 0, H: 0, laneH: 0, gateW: 0, playerX: 0
   };
@@ -128,44 +129,6 @@
     else if (name === 'bad') { beep(180, 0.16, 'sawtooth', 0.09); beep(120, 0.22, 'sawtooth', 0.08, 0.12); }
     else if (name === 'level') { beep(523, 0.13, 'square', 0.08); beep(659, 0.13, 'square', 0.08, 0.13); beep(784, 0.13, 'square', 0.08, 0.26); beep(1046, 0.30, 'square', 0.09, 0.39); }
     else if (name === 'over') { beep(400, 0.18, 'sawtooth', 0.09); beep(300, 0.20, 'sawtooth', 0.08, 0.16); beep(200, 0.35, 'sawtooth', 0.08, 0.34); }
-  }
-
-  /* Pronunciación en inglés (voz del navegador, sin internet) */
-  function say(text) {
-    if (G.mute) return;
-    try {
-      var S = window.speechSynthesis;
-      if (!S) return;
-      S.cancel();
-      var u = new SpeechSynthesisUtterance(text);
-      u.lang = 'en-US';
-      u.rate = 0.85;
-      S.speak(u);
-    } catch (e) { /* sin voz disponible */ }
-  }
-  var canSpeak = (typeof window !== 'undefined' && 'speechSynthesis' in window);
-
-  /* ¿Hay alguna voz instalada en el equipo? Si no, ocultamos el altavoz
-     en lugar de mostrar un botón que no hace nada. */
-  function hasVoice() {
-    try {
-      var S = window.speechSynthesis;
-      if (!S) return false;
-      if (S.getVoices) S.getVoices();
-      return !!(S.getVoices && S.getVoices().length);
-    } catch (e) { return false; }
-  }
-  function refreshSpeakers() {
-    var list = document.getElementById('vocab-list');
-    if (!list) return;
-    var ok = canSpeak && hasVoice();
-    list.classList.toggle('no-voice', !ok);
-    var note = document.getElementById('vocab-note');
-    if (note) {
-      note.textContent = ok
-        ? 'Toca el altavoz para escuchar cómo se pronuncia en inglés.'
-        : 'Estas son las palabras que van a aparecer en el nivel.';
-    }
   }
 
   /* ---------------- DOM ---------------- */
@@ -224,6 +187,7 @@
     }
     else if (k === 'p' || k === 'P' || k === 'Escape') { togglePause(); }
     else if (k === 'm' || k === 'M') { toggleMute(); }
+    else if (k === 'h' || k === 'H') { toggleHint(); }
   }, { passive: false });
 
   var touchStart = null;
@@ -314,7 +278,6 @@
       burst(G.playerX, laneCenter(G.lane), '#2fa96b', 22);
       G.popups.push({ x: G.playerX + 26, y: laneCenter(G.lane) - 24, text: '+' + gain, life: 900, t: 0, color: '#7ee2b0' });
       sfx('good');
-      say(g.words[g.correctLane]);
       toast('Correcto · ' + esc(g.q.meaning) + '\n' + esc(g.q.explain), 'good');
       syncHUD();
       if (G.practice) { endPractice(); return; }
@@ -429,16 +392,9 @@
         '<span class="vocab-en notranslate" translate="no">' + esc(v.en) + '</span>' +
         '<span class="vocab-es"><b>' + esc(v.es) + '</b>' +
         (v.tip ? '<span class="tip">' + esc(v.tip) + '</span>' : '') + '</span>' +
-        (canSpeak
-          ? '<button class="speak" type="button" data-say="' + esc(v.say || v.en) + '" ' +
-            'aria-label="Escuchar ' + esc(v.en) + '">' + icon('volume-2', 17) + '</button>'
-          : '') +
         '</li>';
     }
     list.innerHTML = html;
-
-    refreshSpeakers();
-    later(400, refreshSpeakers);
 
     document.getElementById('btn-vocab-back').style.display = thenPlay ? 'none' : 'flex';
     setScreen('vocab');
@@ -523,10 +479,36 @@
     G.mute = !G.mute;
     store.set('gr_mute', G.mute ? '1' : '0');
     updateMuteBtn();
-    if (!G.mute) { sfx('move'); say('Hello'); }
+    if (!G.mute) sfx('move');
   }
   function updateMuteBtn() {
-    document.getElementById('btn-mute').innerHTML = icon(G.mute ? 'volume-x' : 'volume-2', 18);
+    var b = document.getElementById('btn-mute');
+    if (!b) return;
+    b.innerHTML = icon(G.mute ? 'volume-x' : 'volume-2', 18);
+    var label = G.mute ? 'Activar el sonido' : 'Silenciar el sonido';
+    b.setAttribute('aria-label', label);
+    b.title = label + ' (M)';
+  }
+
+  /* Mostrar u ocultar la pista con el significado */
+  function toggleHint() {
+    G.hideHint = !G.hideHint;
+    store.set('gr_hint', G.hideHint ? '1' : '0');
+    applyHint();
+    updateHintBtn();
+    sfx('move');
+  }
+  function applyHint() {
+    if (elCue) elCue.style.display = G.hideHint ? 'none' : '';
+  }
+  function updateHintBtn() {
+    var b = document.getElementById('btn-hint');
+    if (!b) return;
+    b.innerHTML = icon(G.hideHint ? 'eye-off' : 'eye', 18);
+    var label = G.hideHint ? 'Mostrar la pista' : 'Ocultar la pista';
+    b.setAttribute('aria-label', label);
+    b.title = label + ' (H)';
+    b.classList.toggle('is-off', G.hideHint);
   }
 
   /* ---------------- Partículas ---------------- */
@@ -915,10 +897,6 @@
     document.getElementById('btn-tut-skip').addEventListener('click', startGame);
     document.getElementById('btn-practice-end').addEventListener('click', restart);
 
-    document.getElementById('vocab-list').addEventListener('click', function (e) {
-      var b = e.target.closest ? e.target.closest('.speak') : null;
-      if (b && b.dataset.say) say(b.dataset.say);
-    });
     document.getElementById('btn-vocab-play').addEventListener('click', closeVocab);
     document.getElementById('btn-vocab-back').addEventListener('click', function () {
       G.afterVocab = null; goMenu();
@@ -937,17 +915,11 @@
     document.getElementById('btn-restart').addEventListener('click', restart);
     document.getElementById('btn-pause').addEventListener('click', togglePause);
     document.getElementById('btn-mute').addEventListener('click', toggleMute);
+    document.getElementById('btn-hint').addEventListener('click', toggleHint);
 
     document.getElementById('best-menu').textContent = G.best;
     updateMuteBtn();
-
-    if (canSpeak) {
-      refreshSpeakers();
-      if (window.speechSynthesis.onvoiceschanged !== undefined) {
-        window.speechSynthesis.onvoiceschanged = refreshSpeakers;
-      }
-      later(900, refreshSpeakers);
-    }
+    updateHintBtn();
 
     // Utilidad de desarrollo: permite probar el juego desde la consola.
     window.GRAMMAR_RUNNER = {
@@ -988,6 +960,7 @@
     syncHUD();
     setScreen('menu');
     showOverlay('screen-menu');
+    applyHint();
 
     stage.addEventListener('touchstart', onTouchStart, { passive: true });
     stage.addEventListener('touchmove', onTouchMove, { passive: false });

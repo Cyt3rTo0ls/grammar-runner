@@ -485,6 +485,9 @@ kbd .ic { display: inline-block; vertical-align: -2px; }
 }
 .speak:hover { color: var(--accent); border-color: rgba(79, 140, 255, 0.5); }
 
+/* Si el equipo no tiene voces instaladas, no mostramos el altavoz */
+.vocab-list.no-voice .speak { display: none; }
+
 /* ============================================================
    Pantallas cortas (iPad acostado) y reducción de movimiento
    ============================================================ */

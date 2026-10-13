@@ -145,6 +145,29 @@
   }
   var canSpeak = (typeof window !== 'undefined' && 'speechSynthesis' in window);
 
+  /* ¿Hay alguna voz instalada en el equipo? Si no, ocultamos el altavoz
+     en lugar de mostrar un botón que no hace nada. */
+  function hasVoice() {
+    try {
+      var S = window.speechSynthesis;
+      if (!S) return false;
+      if (S.getVoices) S.getVoices();
+      return !!(S.getVoices && S.getVoices().length);
+    } catch (e) { return false; }
+  }
+  function refreshSpeakers() {
+    var list = document.getElementById('vocab-list');
+    if (!list) return;
+    var ok = canSpeak && hasVoice();
+    list.classList.toggle('no-voice', !ok);
+    var note = document.getElementById('vocab-note');
+    if (note) {
+      note.textContent = ok
+        ? 'Toca el altavoz para escuchar cómo se pronuncia en inglés.'
+        : 'Estas son las palabras que van a aparecer en el nivel.';
+    }
+  }
+
   /* ---------------- DOM ---------------- */
   var cv, ctx, stage;
   var promptEl, elIcon, elEs, elEn, elTag, elCue;
@@ -414,10 +437,8 @@
     }
     list.innerHTML = html;
 
-    var note = document.getElementById('vocab-note');
-    note.textContent = canSpeak
-      ? 'Toca el altavoz para escuchar cómo se pronuncia en inglés.'
-      : 'Estas son las palabras que aparecerán en el nivel.';
+    refreshSpeakers();
+    later(400, refreshSpeakers);
 
     document.getElementById('btn-vocab-back').style.display = thenPlay ? 'none' : 'flex';
     setScreen('vocab');
@@ -919,6 +940,14 @@
 
     document.getElementById('best-menu').textContent = G.best;
     updateMuteBtn();
+
+    if (canSpeak) {
+      refreshSpeakers();
+      if (window.speechSynthesis.onvoiceschanged !== undefined) {
+        window.speechSynthesis.onvoiceschanged = refreshSpeakers;
+      }
+      later(900, refreshSpeakers);
+    }
 
     // Utilidad de desarrollo: permite probar el juego desde la consola.
     window.GRAMMAR_RUNNER = {

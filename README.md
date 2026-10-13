@@ -16,7 +16,8 @@ botones en pantalla). No necesita internet ni instalar nada: HTML, CSS y JavaScr
 ## Cómo se juega
 
 1. **Primero el vocabulario.** Antes de cada nivel aparece la lista de palabras con su
-   significado (y un altavoz para escuchar la pronunciación en inglés).
+   significado. Si el equipo tiene voces instaladas, cada palabra trae un altavoz para
+   escuchar la pronunciación en inglés (si no las tiene, el altavoz no se muestra).
 2. **Lee la pista.** Arriba verás la frase en español y debajo la misma frase en inglés,
    con un espacio en blanco `___`. Esa es la palabra que tienes que encontrar.
 3. **Elige la puerta.** Tres puertas con palabras en inglés vienen hacia ti.

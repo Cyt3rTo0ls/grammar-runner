@@ -1,0 +1,379 @@
+/* ============================================================
+   Grammar Runner: Word Switch — estilos
+   Diseñado para laptop y iPad (táctil), vertical y horizontal
+   ============================================================ */
+
+* { box-sizing: border-box; }
+
+html, body {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+  overflow: hidden;
+  background: #070a20;
+  color: #e8ecff;
+  font-family: "Trebuchet MS", "Segoe UI", system-ui, -apple-system, sans-serif;
+  -webkit-tap-highlight-color: transparent;
+  -webkit-text-size-adjust: 100%;
+  overscroll-behavior: none;
+}
+
+body { touch-action: manipulation; }
+
+#app {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  height: 100dvh;
+  padding-top: env(safe-area-inset-top);
+  padding-bottom: env(safe-area-inset-bottom);
+}
+
+/* ---------------- Barra superior ---------------- */
+#topbar {
+  flex: 0 0 auto;
+  padding: 8px clamp(8px, 2vw, 20px) 6px;
+  background: linear-gradient(180deg, rgba(10,15,44,0.98), rgba(10,15,44,0.82));
+  border-bottom: 1px solid rgba(120,140,255,0.18);
+  z-index: 5;
+}
+
+#hud {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  font-size: clamp(12px, 2.6vw, 16px);
+  min-height: 30px;
+}
+
+#hud-level {
+  font-weight: 800;
+  letter-spacing: 0.3px;
+  color: #c7d2fe;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.hud-right {
+  display: flex;
+  align-items: center;
+  gap: clamp(6px, 1.6vw, 14px);
+  white-space: nowrap;
+}
+
+#hud-streak { color: #fbbf24; font-weight: 800; }
+
+.score-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  background: rgba(56,189,248,0.16);
+  border: 1px solid rgba(56,189,248,0.4);
+  padding: 3px 10px;
+  border-radius: 999px;
+  font-weight: 800;
+  color: #bae6fd;
+}
+
+.icon-btn {
+  background: rgba(255,255,255,0.08);
+  border: 1px solid rgba(255,255,255,0.16);
+  color: #e8ecff;
+  border-radius: 10px;
+  padding: 4px 9px;
+  font-size: 15px;
+  cursor: pointer;
+  line-height: 1.2;
+}
+.icon-btn:active { transform: scale(0.94); }
+
+/* La pausa solo tiene sentido durante el juego */
+body:not([data-screen="playing"]):not([data-screen="paused"]) #btn-pause { display: none; }
+
+/* ---------------- Pista de la pregunta ---------------- */
+#prompt {
+  display: none;
+  align-items: center;
+  gap: clamp(8px, 2vw, 18px);
+  margin-top: 8px;
+  padding: clamp(8px, 1.6vw, 14px) clamp(10px, 2vw, 18px);
+  background: linear-gradient(135deg, rgba(45,55,120,0.55), rgba(30,25,70,0.55));
+  border: 1px solid rgba(140,160,255,0.30);
+  border-radius: 16px;
+  box-shadow: 0 6px 26px rgba(0,0,0,0.35);
+}
+#prompt.show { display: flex; }
+
+#prompt-emoji {
+  font-size: clamp(30px, 7vw, 52px);
+  line-height: 1;
+  flex: 0 0 auto;
+  filter: drop-shadow(0 2px 6px rgba(0,0,0,0.4));
+}
+
+#prompt-body { min-width: 0; flex: 1 1 auto; }
+
+#prompt-text {
+  font-size: clamp(16px, 3.6vw, 26px);
+  font-weight: 800;
+  line-height: 1.25;
+  color: #ffffff;
+}
+
+#prompt-text .blank {
+  color: #67e8f9;
+  border-bottom: 3px dashed #67e8f9;
+  padding: 0 6px;
+  animation: blink 1.1s ease-in-out infinite;
+}
+@keyframes blink { 0%,100% { opacity: 1; } 50% { opacity: 0.35; } }
+
+#prompt-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 5px;
+  font-size: clamp(10px, 2.3vw, 14px);
+}
+
+#prompt-tag {
+  background: rgba(167,139,250,0.20);
+  border: 1px solid rgba(167,139,250,0.45);
+  color: #ddd6fe;
+  padding: 2px 10px;
+  border-radius: 999px;
+  font-weight: 700;
+}
+
+#prompt-hint { color: #fcd34d; font-weight: 700; }
+
+/* ---------------- Escenario ---------------- */
+#stage {
+  position: relative;
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow: hidden;
+  touch-action: none;
+}
+
+#game { display: block; width: 100%; height: 100%; }
+
+/* ---------------- Botones táctiles ---------------- */
+#controls {
+  display: none; /* se activa solo en pantallas táctiles */
+  position: absolute;
+  right: clamp(8px, 2.5vw, 26px);
+  bottom: clamp(12px, 4vh, 40px);
+  flex-direction: column;
+  gap: 12px;
+  z-index: 4;
+}
+
+#controls button {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  width: clamp(64px, 12vw, 92px);
+  height: clamp(58px, 10vw, 80px);
+  font-size: clamp(20px, 4vw, 30px);
+  color: #fff;
+  background: linear-gradient(180deg, rgba(90,110,220,0.55), rgba(50,60,140,0.55));
+  border: 2px solid rgba(160,180,255,0.55);
+  border-radius: 18px;
+  box-shadow: 0 8px 22px rgba(0,0,0,0.4);
+  cursor: pointer;
+  user-select: none;
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+}
+#controls button span {
+  font-size: clamp(9px, 1.6vw, 12px);
+  letter-spacing: 0.5px;
+  opacity: 0.85;
+}
+#controls button:active { transform: scale(0.93); background: rgba(120,140,255,0.75); }
+
+/* Los botones táctiles solo se muestran en iPad / tablets con dedo */
+@media (pointer: coarse) {
+  body[data-screen="playing"] #controls { display: flex; }
+}
+
+/* En laptop con mouse se juega con el teclado y con el trackpad */
+@media (hover: hover) and (pointer: fine) {
+  #controls { display: none; }
+}
+
+/* ---------------- Avisos ---------------- */
+.flash, .toast {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%) translateY(14px);
+  max-width: min(92%, 720px);
+  padding: 12px 18px;
+  border-radius: 14px;
+  font-size: clamp(12px, 2.6vw, 17px);
+  font-weight: 700;
+  line-height: 1.35;
+  text-align: center;
+  white-space: pre-line;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity .25s ease, transform .25s ease;
+  z-index: 6;
+}
+
+.flash {
+  bottom: 22%;
+  background: rgba(190,40,50,0.94);
+  border: 2px solid #fca5a5;
+  color: #fff;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.45);
+}
+
+.toast {
+  bottom: 7%;
+  background: rgba(22,120,70,0.94);
+  border: 2px solid #6ee7b7;
+  color: #fff;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.45);
+}
+
+.flash.show, .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+/* ---------------- Capas / tarjetas ---------------- */
+.overlay {
+  position: fixed;
+  inset: 0;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  background: radial-gradient(circle at 50% 30%, rgba(30,40,110,0.85), rgba(5,7,25,0.95));
+  backdrop-filter: blur(7px);
+  -webkit-backdrop-filter: blur(7px);
+  z-index: 20;
+  overflow-y: auto;
+}
+.overlay.on { display: flex; }
+
+.card {
+  width: 100%;
+  max-width: 560px;
+  margin: auto;
+  padding: clamp(18px, 4vw, 34px);
+  text-align: center;
+  background: linear-gradient(160deg, rgba(35,42,95,0.96), rgba(20,18,52,0.97));
+  border: 1px solid rgba(150,170,255,0.30);
+  border-radius: 24px;
+  box-shadow: 0 24px 60px rgba(0,0,0,0.55);
+}
+.card.wide { max-width: 620px; }
+
+.logo { font-size: clamp(40px, 11vw, 68px); line-height: 1.1; }
+
+.card h1 {
+  margin: 6px 0 2px;
+  font-size: clamp(26px, 7vw, 44px);
+  letter-spacing: 0.5px;
+  background: linear-gradient(90deg, #67e8f9, #a78bfa, #f472b6);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+.card h2 { margin: 10px 0 6px; font-size: clamp(20px, 5vw, 30px); }
+.card p { margin: 8px 0; color: #c9d2f5; font-size: clamp(13px, 3.1vw, 17px); line-height: 1.5; }
+.card .sub { color: #9aa8e0; font-weight: 700; }
+.card .desc { color: #dfe4ff; }
+
+.tut-emoji { font-size: clamp(38px, 10vw, 62px); line-height: 1; margin-bottom: 4px; }
+
+.stats {
+  display: flex;
+  justify-content: center;
+  gap: 26px;
+  margin: 14px 0 6px;
+}
+.stats .k { display: block; font-size: 12px; color: #9aa8e0; letter-spacing: 0.4px; }
+.stats b { font-size: 22px; color: #fde68a; }
+
+.score-big {
+  margin: 12px 0;
+  font-size: clamp(20px, 5vw, 28px);
+  font-weight: 800;
+  color: #86efac;
+}
+
+.btn {
+  display: block;
+  width: 100%;
+  margin: 10px 0;
+  padding: clamp(12px, 2.6vw, 16px) 18px;
+  font-family: inherit;
+  font-size: clamp(14px, 3.4vw, 18px);
+  font-weight: 800;
+  color: #eef2ff;
+  background: rgba(255,255,255,0.09);
+  border: 2px solid rgba(160,180,255,0.35);
+  border-radius: 14px;
+  cursor: pointer;
+  transition: transform .08s ease, background .15s ease;
+}
+.btn:hover { background: rgba(255,255,255,0.15); }
+.btn:active { transform: scale(0.97); }
+.btn.primary {
+  background: linear-gradient(90deg, #3b82f6, #8b5cf6);
+  border-color: rgba(200,210,255,0.6);
+  box-shadow: 0 10px 26px rgba(80,90,220,0.45);
+}
+.btn.big { font-size: clamp(16px, 4vw, 21px); padding: clamp(14px, 3vw, 20px) 18px; }
+.btn.ghost {
+  background: transparent;
+  border-color: rgba(160,180,255,0.22);
+  color: #9aa8e0;
+  font-size: clamp(12px, 2.8vw, 15px);
+  font-weight: 700;
+}
+
+.row { display: flex; gap: 10px; }
+.row .btn { margin: 10px 0; }
+
+.dots { display: flex; justify-content: center; gap: 8px; margin: 16px 0 6px; }
+.dots .dot {
+  width: 9px; height: 9px; border-radius: 50%;
+  background: rgba(255,255,255,0.22);
+  transition: all .2s ease;
+}
+.dots .dot.on { background: #67e8f9; width: 26px; border-radius: 6px; }
+
+.hint-keys { font-size: clamp(11px, 2.5vw, 14px); color: #8f9ed4; margin-top: 14px; }
+.hint-keys b {
+  display: inline-block;
+  min-width: 22px;
+  padding: 1px 6px;
+  margin: 0 1px;
+  background: rgba(255,255,255,0.10);
+  border: 1px solid rgba(255,255,255,0.22);
+  border-radius: 6px;
+  color: #dbe4ff;
+}
+
+/* ---------------- Pantallas horizontales (iPad acostado) ---------------- */
+@media (orientation: landscape) and (max-height: 620px) {
+  #prompt { padding: 6px 14px; margin-top: 6px; }
+  #prompt-emoji { font-size: clamp(24px, 5vw, 40px); }
+  .card { max-width: 640px; padding: 16px 24px; }
+  .card h1 { font-size: clamp(22px, 5vw, 34px); }
+  .logo { font-size: 40px; }
+  .btn { padding: 10px 16px; margin: 7px 0; }
+  .stats { margin: 8px 0 2px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * { animation: none !important; transition: none !important; }
+}

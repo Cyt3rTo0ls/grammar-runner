@@ -53,10 +53,13 @@ python3 -m http.server 8000
 
 Luego entra desde el iPad a `http://IP-DE-TU-COMPUTADORA:8000`.
 
-### Opción 3: publicarlo en GitHub Pages
-`Settings ➜ Pages ➜ Source: Deploy from a branch ➜ main / (root) ➜ Save`.
-En un par de minutos el juego queda en
-`https://TU-USUARIO.github.io/grammar-runner/` y se abre en el iPad con doble toque.
+### Opción 3: jugar en línea (ya está publicado) 👉 https://cyt3rto0ls.github.io/grammar-runner/
+
+Ese enlace ya funciona y se abre directo en el iPad o en la laptop, sin instalar nada.
+
+Si quieres publicarlo desde otro repositorio: `Settings ➜ Pages ➜ Source: Deploy from a
+branch ➜ main / (root) ➜ Save`. En un par de minutos el juego queda en
+`https://TU-USUARIO.github.io/grammar-runner/`.
 
 > En el iPad puedes añadirlo a la pantalla de inicio (Compartir ➜ Añadir a pantalla de
 > inicio) y se abre a pantalla completa como una app.

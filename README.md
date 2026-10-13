@@ -6,8 +6,9 @@ por 3 carriles y tú eliges la puerta con la palabra correcta.
 Pensado para alguien que **no sabe inglés todavía**: cada nivel empieza con su vocabulario,
 las frases aparecen en español y en inglés, y cada respuesta te muestra su significado.
 
-Funciona en **laptop** (teclado) y en **iPad / tablets** (deslizando el dedo o con los
-botones en pantalla). No necesita internet ni instalar nada: HTML, CSS y JavaScript puro.
+Funciona en **laptop** (teclado) y en **tablets y celulares Android e iPad**, tanto en
+vertical como en **horizontal** (deslizando el dedo o con los botones en pantalla). No
+necesita internet ni instalar nada: HTML, CSS y JavaScript puro.
 
 **Jugar en línea:** https://cyt3rto0ls.github.io/grammar-runner/
 
@@ -17,19 +18,27 @@ botones en pantalla). No necesita internet ni instalar nada: HTML, CSS y JavaScr
 
 1. **Primero el vocabulario.** Antes de cada nivel aparece la lista de palabras con su
    significado y un ejemplo.
-2. **Lee la pista.** Arriba verás la frase en español y debajo la misma frase en inglés,
-   con un espacio en blanco `___`. Esa es la palabra que tienes que encontrar. Al lado hay
-   una pista corta con el significado (`Pista: yo`); si la quieres ocultar, toca el botón
-   del ojo de arriba para practicar sin ayuda.
+2. **Lee la pista.** Arriba, en grande y en blanco, está la frase **en inglés** con un
+   espacio en blanco `___`. Debajo, marcado con la etiqueta **Español**, está la misma
+   frase traducida para que te des una idea. Los dos se ven bien, pero el inglés manda.
 3. **Elige la puerta.** Tres puertas con palabras en inglés vienen hacia ti.
    - **Laptop:** flechas `↑` `↓` o las teclas `W` / `S`.
-   - **iPad:** desliza el dedo hacia arriba o hacia abajo, o toca los botones de la esquina.
+   - **Tablet o celular (Android / iPad):** desliza el dedo hacia arriba o hacia abajo, o
+     toca los botones de la esquina. Funciona en vertical y en horizontal.
 4. **Gana o aprende.** Si cruzas la puerta correcta ganas 10 puntos (más bonus por racha).
    Si fallas pierdes una vida y te mostramos la respuesta correcta con su significado y una
    explicación corta.
+5. **No pierdes tu avance.** Si te quedas sin vidas en el nivel 2, el botón de reintento
+   dice **Repetir el nivel 2**: repites ese mismo nivel, no vuelves al nivel 1, y el
+   puntaje acumulado se conserva.
 
-En la barra superior tienes siempre: la pista (ojo), el sonido (altavoz) y el botón
-**Pausa**.
+En la barra superior tienes siempre el sonido (altavoz) y el botón **Pausa**.
+
+### La pista con el significado
+La pista viene **apagada por defecto**, para que intentes resolverlo solo. Para verla hay
+un botón con el signo **`?`** y la palabra **pista** debajo, dentro de la barra de la
+pregunta: tócalo y aparece el significado en ámbar; tócalo otra vez y desaparece. La
+elección se recuerda para la próxima partida.
 
 Otras teclas: `P` o `Esc` = pausa · `M` = silenciar sonido · `H` = mostrar u ocultar la
 pista con el significado.

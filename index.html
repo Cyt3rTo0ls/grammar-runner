@@ -28,7 +28,6 @@
         <span id="hud-streak" class="hud-streak"></span>
         <span id="hud-lives" class="lives" aria-label="Vidas"></span>
         <span class="score"><span class="score-label">Puntos</span><b id="hud-score">0</b></span>
-        <button id="btn-hint" class="icon-btn" type="button" aria-label="Ocultar la pista"></button>
         <button id="btn-mute" class="icon-btn" type="button" aria-label="Silenciar el sonido"></button>
         <button id="btn-pause" class="icon-btn labeled" type="button" aria-label="Pausa">
           <span class="btn-icon" data-icon="pause" data-icon-size="16"></span>
@@ -40,10 +39,18 @@
     <div id="prompt" class="prompt notranslate" translate="no">
       <div id="prompt-icon" class="prompt-icon"></div>
       <div class="prompt-body">
-        <p id="prompt-es" class="prompt-es"></p>
+        <!-- El inglés es el texto principal: grande y en blanco -->
         <p id="prompt-en" class="prompt-en"></p>
+        <!-- El español es la traducción: marcado y con tamaño legible -->
+        <p id="prompt-es" class="prompt-es">
+          <span class="lang-chip">Español</span><span id="prompt-es-text" class="prompt-es-text"></span>
+        </p>
         <div class="prompt-meta">
           <span id="prompt-tag" class="tag"></span>
+          <button id="btn-hint" class="hint-badge is-off" type="button" aria-label="Mostrar la pista">
+            <span class="hint-mark" aria-hidden="true">?</span>
+            <span class="hint-word">pista</span>
+          </button>
           <span id="prompt-cue" class="cue"></span>
         </div>
       </div>
@@ -162,7 +169,7 @@
         <div><dt>Mejor puntaje</dt><dd id="over-best">0</dd></div>
       </dl>
       <button id="btn-retry" class="btn primary" type="button">
-        <span class="btn-icon" data-icon="rotate-ccw"></span> Jugar otra vez
+        <span class="btn-icon" data-icon="rotate-ccw"></span> <span id="retry-label">Jugar otra vez</span>
       </button>
       <button id="btn-menu-2" class="btn ghost" type="button">Volver al menú</button>
     </div>

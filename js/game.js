@@ -92,7 +92,7 @@
     lastT: 0,
     shake: 0,
     mute: store.get('gr_mute', '0') === '1',
-    hideHint: store.get('gr_hint', '0') === '1',
+    hideHint: store.get('gr_hint', '1') === '1',
     afterVocab: null,   // qué hacer al cerrar el vocabulario
     W: 0, H: 0, laneH: 0, gateW: 0, playerX: 0
   };
@@ -133,7 +133,7 @@
 
   /* ---------------- DOM ---------------- */
   var cv, ctx, stage;
-  var promptEl, elIcon, elEs, elEn, elTag, elCue;
+  var promptEl, elIcon, elEn, elEsText, elTag, elCue;
   var elLevel, elProgress, elScore, elLives, elStreak;
   var elFlash, elToast;
   var flashTimer = null, toastTimer = null;
@@ -332,7 +332,9 @@
     document.getElementById('over-score').textContent = G.score;
     document.getElementById('over-best').textContent = G.best;
     document.getElementById('over-detail').textContent =
-      'Acertaste ' + G.rightCount + ' palabras y fallaste ' + G.wrongCount + '.';
+      'Acertaste ' + G.rightCount + ' palabras y fallaste ' + G.wrongCount +
+      '. Repites el nivel ' + LEVELS[G.levelIndex].id + ', no vuelves al principio.';
+    document.getElementById('retry-label').textContent = 'Repetir el nivel ' + LEVELS[G.levelIndex].id;
     setScreen('gameOver');
     showOverlay('screen-over');
   }
@@ -430,10 +432,11 @@
   }
   function showPrompt(q) {
     elIcon.innerHTML = icon(q.icon || 'sparkles', 26);
-    elEs.innerHTML = esc(q.es).replace('___', '<span class="blank">___</span>');
+    // El inglés es el texto principal; el español es la traducción.
     elEn.innerHTML = esc(q.en).replace('___', '<span class="blank">___</span>');
+    elEsText.innerHTML = esc(q.es).replace('___', '<span class="blank">___</span>');
     elTag.textContent = q.pattern || (LEVELS[G.levelIndex] ? LEVELS[G.levelIndex].tag : '');
-    elCue.textContent = q.cue ? 'Pista: ' + q.cue : '';
+    elCue.textContent = q.cue || '';
   }
   function syncHUD() {
     elScore.textContent = G.score;
@@ -474,6 +477,16 @@
   }
   function restart() { resetRun(); openVocab(0, true); }
   function startGame() { actx(); resetRun(); openVocab(0, true); }
+
+  /* Al perder la partida se repite el nivel en el que estabas:
+     no te manda al nivel 1. */
+  function resumeAfterGameOver() {
+    G.streak = 0;
+    G.lives = CFG.lives;
+    G.particles = []; G.popups = [];
+    G.practice = false; G.highlight = false;
+    openVocab(G.levelIndex, true);
+  }
   function goMenu() { hideOverlays(); setScreen('menu'); showOverlay('screen-menu'); }
   function toggleMute() {
     G.mute = !G.mute;
@@ -504,11 +517,12 @@
   function updateHintBtn() {
     var b = document.getElementById('btn-hint');
     if (!b) return;
-    b.innerHTML = icon(G.hideHint ? 'eye-off' : 'eye', 18);
-    var label = G.hideHint ? 'Mostrar la pista' : 'Ocultar la pista';
+    var visible = !G.hideHint;
+    b.classList.toggle('is-on', visible);
+    b.classList.toggle('is-off', !visible);
+    var label = visible ? 'Ocultar la pista' : 'Mostrar la pista';
     b.setAttribute('aria-label', label);
     b.title = label + ' (H)';
-    b.classList.toggle('is-off', G.hideHint);
   }
 
   /* ---------------- Partículas ---------------- */
@@ -908,7 +922,7 @@
     document.getElementById('btn-continue').addEventListener('click', function () {
       openVocab(parseInt(this.dataset.next, 10), true);
     });
-    document.getElementById('btn-retry').addEventListener('click', restart);
+    document.getElementById('btn-retry').addEventListener('click', resumeAfterGameOver);
     document.getElementById('btn-menu').addEventListener('click', goMenu);
     document.getElementById('btn-menu-2').addEventListener('click', goMenu);
     document.getElementById('btn-resume').addEventListener('click', togglePause);
@@ -941,8 +955,8 @@
     stage = document.getElementById('stage');
     promptEl = document.getElementById('prompt');
     elIcon = document.getElementById('prompt-icon');
-    elEs = document.getElementById('prompt-es');
     elEn = document.getElementById('prompt-en');
+    elEsText = document.getElementById('prompt-es-text');
     elTag = document.getElementById('prompt-tag');
     elCue = document.getElementById('prompt-cue');
     elLevel = document.getElementById('hud-level');
